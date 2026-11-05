@@ -1,0 +1,19 @@
+const COPY: Record<string, { title: string; text: string }> = {
+  system: { title: "System", text: "Live CPU, memory, disk and network, and the processes your agents start." },
+  ports: { title: "Ports", text: "See which process listens on which port, and stop it." },
+  cleanup: { title: "Cleanup", text: "Find caches and stale node_modules, preview them, and move them to the Recycle Bin." },
+  doctor: { title: "Doctor", text: "Read-only health checks for your dev setup, each with an explicit fix." },
+  notch: { title: "Notch", text: "Design the pill and peek card that sit at the top of your screen." },
+  settings: { title: "Settings", text: "Agents, appearance, notifications and privacy." },
+};
+
+export function ComingSoon({ page }: { page: string }) {
+  const copy = COPY[page] ?? { title: page, text: "" };
+  return (
+    <div className="coming">
+      <h1>{copy.title}</h1>
+      <p>{copy.text}</p>
+      <p style={{ marginTop: 10, color: "var(--text-3)" }}>Coming in a later release.</p>
+    </div>
+  );
+}

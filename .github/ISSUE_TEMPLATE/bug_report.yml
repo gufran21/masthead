@@ -1,0 +1,34 @@
+name: Bug report
+description: Something in Masthead doesn't work as expected
+labels: [bug]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: What you did, what you expected, and what happened instead.
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Masthead version
+      placeholder: 0.1.0
+    validations:
+      required: true
+  - type: input
+    id: windows
+    attributes:
+      label: Windows version
+      placeholder: Windows 11 24H2
+    validations:
+      required: true
+  - type: input
+    id: agent
+    attributes:
+      label: Agent and version, if relevant
+      placeholder: Claude Code 2.1.283
+  - type: markdown
+    attributes:
+      value: |
+        Please don't attach session logs. They can contain private code and prompts.

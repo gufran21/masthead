@@ -1,0 +1,13 @@
+{
+  "name": "masthead",
+  "private": true,
+  "license": "MIT",
+  "packageManager": "pnpm@11.10.0",
+  "scripts": {
+    "dev": "pnpm --filter @masthead/desktop tauri dev",
+    "dev:web": "pnpm --filter @masthead/desktop dev",
+    "build": "pnpm --filter @masthead/desktop tauri build",
+    "typecheck": "pnpm --filter @masthead/desktop typecheck",
+    "icons": "pnpm --filter @masthead/desktop tauri icon ../../brand/icon/masthead-icon-1024.png"
+  }
+}

@@ -1,0 +1,24 @@
+# Private notes, plans and design drafts (never published)
+.internal/
+
+# Rust
+target/
+
+# Node
+node_modules/
+dist/
+*.tsbuildinfo
+
+# Tauri generated schemas
+apps/desktop/src-tauri/gen/
+
+# Python
+__pycache__/
+
+# OS / editors
+.DS_Store
+Thumbs.db
+.vscode/*
+!.vscode/extensions.json
+.idea/
+*.log
