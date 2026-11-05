@@ -7,11 +7,22 @@ use std::path::{Path, PathBuf};
 use serde_json::Value;
 
 use super::{for_each_json_line, message_text};
-use crate::model::{parse_ts, title_from, Agent, Session, TokenUsage};
+use crate::model::{parse_ts, title_from, Agent, Session, TokenUsage, Turn};
 
-/// Default location of Claude Code's session logs.
+/// Claude Code writes this as a user message when the user presses Esc.
+const INTERRUPTED: &str = "[Request interrupted by user";
+
+/// Where Claude Code keeps its session logs: `$CLAUDE_CONFIG_DIR/projects` when
+/// that is set (as Claude Code itself does), otherwise `~/.claude/projects`.
 pub fn default_root() -> Option<PathBuf> {
-    dirs::home_dir().map(|h| h.join(".claude").join("projects"))
+    config_dir().map(|d| d.join("projects"))
+}
+
+fn config_dir() -> Option<PathBuf> {
+    match std::env::var_os("CLAUDE_CONFIG_DIR") {
+        Some(dir) if !dir.is_empty() => Some(PathBuf::from(dir)),
+        _ => dirs::home_dir().map(|h| h.join(".claude")),
+    }
 }
 
 /// Session files directly inside each project folder (subagent transcripts in
@@ -71,14 +82,27 @@ pub fn parse_file(path: &Path) -> anyhow::Result<Session> {
                     .get("isSidechain")
                     .and_then(Value::as_bool)
                     .unwrap_or(false);
-                let text = line
-                    .get("message")
-                    .and_then(|m| m.get("content"))
-                    .and_then(message_text)
-                    .and_then(title_from);
+                if is_side {
+                    return;
+                }
+                let content = line.get("message").and_then(|m| m.get("content"));
+                let raw = content.and_then(message_text);
+                if raw.is_some_and(|t| t.trim_start().starts_with(INTERRUPTED)) {
+                    session.turn = Turn::Interrupted;
+                    return;
+                }
+                let is_tool_result = content.and_then(Value::as_array).is_some_and(|blocks| {
+                    blocks
+                        .iter()
+                        .any(|b| b.get("type").and_then(Value::as_str) == Some("tool_result"))
+                });
+                if is_tool_result {
+                    session.turn = Turn::Working;
+                }
                 // Tool results also arrive as `user` lines but carry no text block.
-                if let (false, false, Some(text)) = (is_meta, is_side, text) {
+                if let (false, Some(text)) = (is_meta, raw.and_then(title_from)) {
                     session.user_messages += 1;
+                    session.turn = Turn::Working;
                     first_prompt.get_or_insert(text);
                 }
             }
@@ -86,6 +110,18 @@ pub fn parse_file(path: &Path) -> anyhow::Result<Session> {
                 let Some(message) = line.get("message") else {
                     return;
                 };
+                let is_side = line
+                    .get("isSidechain")
+                    .and_then(Value::as_bool)
+                    .unwrap_or(false);
+                if !is_side {
+                    // Each streamed block repeats the stop reason once the reply is
+                    // complete; `end_turn` means the agent now waits for the user.
+                    session.turn = match message.get("stop_reason").and_then(Value::as_str) {
+                        Some("end_turn" | "stop_sequence") => Turn::Done,
+                        _ => Turn::Working,
+                    };
+                }
                 if let Some(model) = message.get("model").and_then(Value::as_str) {
                     if !model.starts_with('<') {
                         session.model = Some(model.to_string());

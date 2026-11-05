@@ -9,14 +9,23 @@ use serde_json::Value;
 use walkdir::WalkDir;
 
 use super::{for_each_json_line, message_text};
-use crate::model::{parse_ts, title_from, Agent, Session, TokenUsage};
+use crate::model::{parse_ts, title_from, Agent, Session, TokenUsage, Turn};
 
+/// Where Codex keeps its rollouts: `$CODEX_HOME/sessions` when that is set (as
+/// Codex itself does), otherwise `~/.codex/sessions`.
 pub fn default_root() -> Option<PathBuf> {
-    dirs::home_dir().map(|h| h.join(".codex").join("sessions"))
+    codex_home().map(|d| d.join("sessions"))
 }
 
 pub fn default_index() -> Option<PathBuf> {
-    dirs::home_dir().map(|h| h.join(".codex").join("session_index.jsonl"))
+    codex_home().map(|d| d.join("session_index.jsonl"))
+}
+
+fn codex_home() -> Option<PathBuf> {
+    match std::env::var_os("CODEX_HOME") {
+        Some(dir) if !dir.is_empty() => Some(PathBuf::from(dir)),
+        _ => dirs::home_dir().map(|h| h.join(".codex")),
+    }
 }
 
 pub fn discover(root: &Path) -> Vec<PathBuf> {
@@ -86,6 +95,18 @@ pub fn parse_file(path: &Path, titles: &HashMap<String, String>) -> anyhow::Resu
                 if let Some(cwd) = payload.get("cwd").and_then(Value::as_str) {
                     session.set_project(cwd);
                 }
+            }
+            Some("event_msg")
+                if matches!(
+                    payload.get("type").and_then(Value::as_str),
+                    Some("task_started" | "task_complete" | "turn_aborted")
+                ) =>
+            {
+                session.turn = match payload.get("type").and_then(Value::as_str) {
+                    Some("task_started") => Turn::Working,
+                    Some("task_complete") => Turn::Done,
+                    _ => Turn::Interrupted,
+                };
             }
             Some("event_msg")
                 if payload.get("type").and_then(Value::as_str) == Some("token_count") =>
