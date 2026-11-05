@@ -1,0 +1,8 @@
+# Store and check out text files with LF on every platform.
+* text=auto eol=lf
+
+# Binary assets: never convert.
+*.png binary
+*.ico binary
+*.icns binary
+*.zst binary
