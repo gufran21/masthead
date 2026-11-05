@@ -20,6 +20,21 @@
         "minHeight": 620,
         "center": true,
         "decorations": false
+      },
+      {
+        "label": "notch",
+        "title": "Masthead notch",
+        "url": "notch.html",
+        "width": 440,
+        "height": 420,
+        "decorations": false,
+        "transparent": true,
+        "alwaysOnTop": true,
+        "skipTaskbar": true,
+        "resizable": false,
+        "shadow": false,
+        "focus": false,
+        "visible": false
       }
     ],
     "security": {

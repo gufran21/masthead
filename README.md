@@ -21,14 +21,17 @@ notch that stays at the top of your screen.
 | Unified list of Claude Code and Codex sessions: title, project, model, state, tokens, context use | Available |
 | Live updates while agents work; close-to-tray | Available |
 | Liquid-glass UI rendered with WebGL, orange accent | Available |
-| Pinned notch with a peek card and approve/deny for agent prompts | Planned |
+| Notch at the top of the screen: push the cursor to the top edge for a status pill, hover for a peek card of live sessions | Available |
+| Notch pops open when an agent finishes its turn and highlights which one | Available |
+| Approve or deny agent prompts from the notch | Planned |
 | Cursor, Gemini CLI and other agents | Planned |
 | System tools: processes, ports, dev servers, cleanup, health checks | Planned |
 
 ## Privacy
 
 Masthead only **reads** the log files agents already keep on your machine
-(`~/.claude/projects`, `~/.codex/sessions`). It never writes to them, never uploads
+(`~/.claude/projects`, `~/.codex/sessions`, or under `CLAUDE_CONFIG_DIR` and
+`CODEX_HOME` when those are set). It never writes to them, never uploads
 anything and has no telemetry or account.
 
 ## Supported agents

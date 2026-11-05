@@ -2,6 +2,8 @@ import { invoke } from "@tauri-apps/api/core";
 
 export type Agent = "claudeCode" | "codex";
 export type SessionState = "active" | "idle" | "ended";
+/** Where the agent is in its exchange with the user. */
+export type Turn = "working" | "done" | "interrupted";
 
 export interface TokenUsage {
   input: number;
@@ -27,10 +29,48 @@ export interface Session {
   contextWindow: number | null;
   isSubagent: boolean;
   sourceFile: string;
+  turn: Turn;
   state: SessionState;
 }
 
 export const inTauri = typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
+
+/** The notch page is listening for events; Rust may show its window. */
+export async function notchReady(): Promise<void> {
+  if (inTauri) await invoke("notch_ready");
+}
+
+/** Where the island sits in the notch window (CSS px), for hover and click-through. */
+export async function notchIsland(x: number, y: number, width: number, height: number): Promise<void> {
+  if (inTauri) await invoke("notch_island", { x, y, width, height });
+}
+
+/** Pops the notch open for `ms`, wherever the cursor is (an agent finished). */
+export async function notchAnnounce(ms: number): Promise<void> {
+  if (inTauri) await invoke("notch_announce", { ms });
+}
+
+/** While pinned, the notch stays open after the cursor leaves. */
+export async function notchPin(pinned: boolean): Promise<void> {
+  if (inTauri) await invoke("notch_pin", { pinned });
+}
+
+/** The screen behind the notch window as RGBA, or null when capture isn't available. */
+export async function captureBackdrop(): Promise<{ width: number; height: number; pixels: Uint8Array } | null> {
+  if (!inTauri) return null;
+  try {
+    const buffer = await invoke<ArrayBuffer>("capture_backdrop");
+    const view = new DataView(buffer);
+    return { width: view.getUint32(0, true), height: view.getUint32(4, true), pixels: new Uint8Array(buffer, 8) };
+  } catch {
+    return null;
+  }
+}
+
+/** Shows the main window, on one session when `key` is given (`agent:id`). */
+export async function openInMain(key = ""): Promise<void> {
+  if (inTauri) await invoke("open_session", { key });
+}
 
 /** Opens a session's project folder in File Explorer (desktop app only). */
 export async function openFolder(path: string): Promise<void> {
@@ -66,6 +106,7 @@ function sampleSessions(): Session[] {
       userMessages: 6,
       tokens: { input: 1_200, output: 42_000, cacheRead: 1_400_000, cacheWrite: 96_000 },
       contextUsed: 118_000,
+      turn: "working",
       state: "active",
     },
     {
@@ -82,6 +123,7 @@ function sampleSessions(): Session[] {
       tokens: { input: 10_000, output: 900, cacheRead: 30_000, cacheWrite: 0 },
       contextUsed: 22_000,
       contextWindow: 258_400,
+      turn: "done",
       state: "idle",
     },
     {
@@ -97,6 +139,7 @@ function sampleSessions(): Session[] {
       userMessages: 2,
       tokens: { input: 300, output: 4_000, cacheRead: 80_000, cacheWrite: 20_000 },
       contextUsed: 24_000,
+      turn: "done",
       state: "ended",
     },
   ];
