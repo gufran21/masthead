@@ -9,5 +9,5 @@ pub mod adapters;
 pub mod model;
 pub mod store;
 
-pub use model::{Agent, Session, SessionState, TokenUsage};
+pub use model::{Agent, Session, SessionState, TokenUsage, Turn};
 pub use store::{Roots, SessionStore};

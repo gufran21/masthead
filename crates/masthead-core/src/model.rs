@@ -11,16 +11,30 @@ pub enum Agent {
     Codex,
 }
 
-/// Activity state derived from how recently the session log changed.
+/// Activity state derived from the turn and how recently the log changed.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub enum SessionState {
-    /// Written to in the last two minutes.
+    /// The agent is working: a turn is in progress and the log changed in the
+    /// last ten minutes (a long build or test run can be quiet for a while).
     Active,
-    /// Written to in the last hour.
+    /// Waiting for the user, within an hour of the last activity.
     Idle,
     /// Older than that.
     Ended,
+}
+
+/// Where the agent is in its exchange with the user.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub enum Turn {
+    /// Replying or running tools.
+    Working,
+    /// Finished its reply; waiting for the user.
+    #[default]
+    Done,
+    /// The user stopped the reply.
+    Interrupted,
 }
 
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize)]
@@ -61,6 +75,7 @@ pub struct Session {
     /// Sessions started by another agent (subagents, reviewers).
     pub is_subagent: bool,
     pub source_file: PathBuf,
+    pub turn: Turn,
     pub state: SessionState,
 }
 
@@ -82,6 +97,7 @@ impl Session {
             context_window: None,
             is_subagent: false,
             source_file,
+            turn: Turn::Done,
             state: SessionState::Ended,
         }
     }
@@ -111,9 +127,12 @@ impl Session {
 
     /// Recomputes [`Session::state`] relative to `now`.
     pub fn refresh_state(&mut self, now: DateTime<Utc>) {
-        self.state = match self.last_activity {
-            Some(t) if now - t <= Duration::minutes(2) => SessionState::Active,
-            Some(t) if now - t <= Duration::hours(1) => SessionState::Idle,
+        let quiet = self.last_activity.map(|t| now - t);
+        self.state = match quiet {
+            Some(q) if self.turn == Turn::Working && q <= Duration::minutes(10) => {
+                SessionState::Active
+            }
+            Some(q) if q <= Duration::hours(1) => SessionState::Idle,
             _ => SessionState::Ended,
         };
     }

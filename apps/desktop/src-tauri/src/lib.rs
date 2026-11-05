@@ -1,11 +1,20 @@
+mod notch;
+
 use std::sync::{Arc, Mutex};
 
 use masthead_core::{Roots, Session, SessionStore};
 use tauri::menu::{Menu, MenuItem};
 use tauri::tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent};
-use tauri::{AppHandle, Manager, State, WindowEvent};
+use tauri::{AppHandle, Emitter, Manager, State, WindowEvent};
 
 type Store = Arc<Mutex<SessionStore>>;
+
+/// Brings up the main window on one session (clicked in the notch).
+#[tauri::command]
+fn open_session(app: AppHandle, key: String) -> Result<(), String> {
+    show_main(&app);
+    app.emit("open-session", key).map_err(|e| e.to_string())
+}
 
 /// Every known agent session, most recently active first. Parsing runs off the
 /// main thread; unchanged log files are served from the store's cache.
@@ -60,17 +69,30 @@ fn show_main(app: &AppHandle) {
 pub fn run() {
     tauri::Builder::default()
         .manage::<Store>(Arc::new(Mutex::new(SessionStore::new(Roots::detect()))))
-        .invoke_handler(tauri::generate_handler![list_sessions, open_folder])
+        .manage(notch::NotchState::default())
+        .invoke_handler(tauri::generate_handler![
+            list_sessions,
+            open_folder,
+            open_session,
+            notch::notch_ready,
+            notch::notch_island,
+            notch::notch_pin,
+            notch::notch_announce,
+            notch::capture_backdrop
+        ])
         .setup(|app| {
             let open = MenuItem::with_id(app, "open", "Open Masthead", true, None::<&str>)?;
+            let notch_item =
+                MenuItem::with_id(app, "notch", "Turn notch on or off", true, None::<&str>)?;
             let quit = MenuItem::with_id(app, "quit", "Quit Masthead", true, None::<&str>)?;
-            let menu = Menu::with_items(app, &[&open, &quit])?;
+            let menu = Menu::with_items(app, &[&open, &notch_item, &quit])?;
             let mut tray = TrayIconBuilder::with_id("main")
                 .tooltip("Masthead")
                 .menu(&menu)
                 .show_menu_on_left_click(false)
                 .on_menu_event(|app, event| match event.id.as_ref() {
                     "open" => show_main(app),
+                    "notch" => notch::toggle_enabled(app),
                     "quit" => app.exit(0),
                     _ => {}
                 })
@@ -88,13 +110,17 @@ pub fn run() {
                 tray = tray.icon(icon.clone());
             }
             tray.build(app)?;
+
+            notch::init(app.handle())?;
             Ok(())
         })
-        // Closing the window keeps Masthead running in the tray; Quit is in the tray menu.
+        // Closing the main window keeps Masthead running in the tray; Quit is in the tray menu.
         .on_window_event(|window, event| {
             if let WindowEvent::CloseRequested { api, .. } = event {
-                api.prevent_close();
-                let _ = window.hide();
+                if window.label() == "main" {
+                    api.prevent_close();
+                    let _ = window.hide();
+                }
             }
         })
         .run(tauri::generate_context!())

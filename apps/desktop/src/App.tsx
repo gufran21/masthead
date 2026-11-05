@@ -1,4 +1,5 @@
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { listen } from "@tauri-apps/api/event";
 import { GlassLayer, type GlassOptions } from "./glass/GlassLayer";
 import { TitleBar } from "./components/TitleBar";
 import { Sidebar, type Page } from "./components/Sidebar";
@@ -6,7 +7,7 @@ import { Overview } from "./pages/Overview";
 import { Sessions } from "./pages/Sessions";
 import { ComingSoon } from "./pages/ComingSoon";
 import { useSessions } from "./lib/useSessions";
-import type { Session } from "./lib/api";
+import { inTauri, type Session } from "./lib/api";
 
 const GLASS: GlassOptions = { accent: "#FF6E01", translucency: 70, solid: false, refraction: 30 };
 
@@ -23,6 +24,22 @@ export function App() {
     setSelected(`${s.agent}:${s.id}`);
     setPage("sessions");
   };
+  // The notch asks the main window to show a session ("agent:id"), or the overview.
+  useEffect(() => {
+    if (!inTauri) return;
+    const off = listen<string>("open-session", ({ payload }) => {
+      if (payload) {
+        setSelected(payload);
+        setPage("sessions");
+      } else {
+        setPage("overview");
+      }
+    });
+    return () => {
+      off.then((unlisten) => unlisten());
+    };
+  }, []);
+
   const search = useCallback((q: string) => {
     setQuery(q);
     if (q) setPage("sessions");
