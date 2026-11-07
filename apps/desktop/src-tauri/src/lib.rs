@@ -1,4 +1,5 @@
 mod notch;
+mod settings;
 
 use std::sync::{Arc, Mutex};
 
@@ -8,6 +9,9 @@ use tauri::tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent}
 use tauri::{AppHandle, Emitter, Manager, State, WindowEvent};
 
 type Store = Arc<Mutex<SessionStore>>;
+
+/// Passed by the Windows sign-in entry, so Masthead starts in the tray.
+const STARTED_BY_LOGIN: &str = "--minimized";
 
 /// Brings up the main window on one session (clicked in the notch).
 #[tauri::command]
@@ -70,6 +74,10 @@ pub fn run() {
     tauri::Builder::default()
         .manage::<Store>(Arc::new(Mutex::new(SessionStore::new(Roots::detect()))))
         .manage(notch::NotchState::default())
+        .plugin(tauri_plugin_autostart::init(
+            tauri_plugin_autostart::MacosLauncher::LaunchAgent,
+            Some(vec![STARTED_BY_LOGIN]),
+        ))
         .invoke_handler(tauri::generate_handler![
             list_sessions,
             open_folder,
@@ -78,7 +86,12 @@ pub fn run() {
             notch::notch_island,
             notch::notch_pin,
             notch::notch_announce,
-            notch::capture_backdrop
+            notch::capture_backdrop,
+            settings::get_settings,
+            settings::set_settings,
+            settings::get_autostart,
+            settings::set_autostart,
+            settings::agent_folders
         ])
         .setup(|app| {
             let open = MenuItem::with_id(app, "open", "Open Masthead", true, None::<&str>)?;
@@ -92,7 +105,9 @@ pub fn run() {
                 .show_menu_on_left_click(false)
                 .on_menu_event(|app, event| match event.id.as_ref() {
                     "open" => show_main(app),
-                    "notch" => notch::toggle_enabled(app),
+                    "notch" => {
+                        let _ = settings::update(app, |s| s.notch_enabled = !s.notch_enabled);
+                    }
                     "quit" => app.exit(0),
                     _ => {}
                 })
@@ -111,15 +126,30 @@ pub fn run() {
             }
             tray.build(app)?;
 
+            let store = settings::SettingsStore::load(app.handle());
+            let current = store.get();
+            app.manage(store);
             notch::init(app.handle())?;
+            notch::apply(app.handle(), &current);
+
+            // Started by Windows at sign-in: stay in the tray with the notch ready.
+            if !std::env::args().any(|a| a == STARTED_BY_LOGIN) {
+                show_main(app.handle());
+            }
             Ok(())
         })
-        // Closing the main window keeps Masthead running in the tray; Quit is in the tray menu.
+        // Closing the main window keeps Masthead in the tray (Quit is in the tray
+        // menu), unless the user turned that off in Settings.
         .on_window_event(|window, event| {
             if let WindowEvent::CloseRequested { api, .. } = event {
                 if window.label() == "main" {
                     api.prevent_close();
-                    let _ = window.hide();
+                    let app = window.app_handle();
+                    if app.state::<settings::SettingsStore>().get().close_to_tray {
+                        let _ = window.hide();
+                    } else {
+                        app.exit(0);
+                    }
                 }
             }
         })

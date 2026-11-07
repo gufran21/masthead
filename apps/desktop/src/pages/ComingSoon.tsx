@@ -4,7 +4,6 @@ const COPY: Record<string, { title: string; text: string }> = {
   cleanup: { title: "Cleanup", text: "Find caches and stale node_modules, preview them, and move them to the Recycle Bin." },
   doctor: { title: "Doctor", text: "Read-only health checks for your dev setup, each with an explicit fix." },
   notch: { title: "Notch", text: "Design the pill and peek card that sit at the top of your screen." },
-  settings: { title: "Settings", text: "Agents, appearance, notifications and privacy." },
 };
 
 export function ComingSoon({ page }: { page: string }) {

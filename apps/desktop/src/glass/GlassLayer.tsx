@@ -9,7 +9,12 @@ import { paintWallpaper } from "./wallpaper";
  * It redraws only when the layout or a setting changes.
  */
 export interface GlassOptions {
+  /** Highlights (selected items, accent glass). */
   accent: string;
+  /** The flat colour behind the glass. */
+  background: string;
+  /** Light glass and dark text (White and Warm white themes). */
+  light: boolean;
   /** 0–100: higher shows more of what is behind the glass. */
   translucency: number;
   /** Solid surfaces instead of glass (Reduce transparency). */
@@ -32,9 +37,9 @@ export function GlassLayer({ root, options }: { root: RefObject<HTMLElement | nu
   const dirty = useRef(true);
 
   useEffect(() => {
-    const accentChanged = opts.current.accent !== options.accent;
+    const backgroundChanged = opts.current.background !== options.background;
     opts.current = options;
-    if (accentChanged) repaint.current();
+    if (backgroundChanged) repaint.current();
     dirty.current = true;
   }, [options]);
 
@@ -65,7 +70,7 @@ export function GlassLayer({ root, options }: { root: RefObject<HTMLElement | nu
     gl.enableVertexAttribArray(attr);
     gl.vertexAttribPointer(attr, 2, gl.FLOAT, false, 0, 0);
 
-    const names = ["uS", "uB1", "uB2", "uRes", "uDpr", "uR", "uK", "uN", "uA", "uRefr", "uTint", "uSolid"];
+    const names = ["uS", "uB1", "uB2", "uRes", "uDpr", "uR", "uK", "uN", "uA", "uRefr", "uTint", "uSolid", "uLight", "uGlass"];
     const u = Object.fromEntries(names.map((n) => [n, gl.getUniformLocation(program, n)]));
     const textures = [0, 1, 2].map(() => {
       const t = gl.createTexture()!;
@@ -93,7 +98,7 @@ export function GlassLayer({ root, options }: { root: RefObject<HTMLElement | nu
       const sharp = make();
       const sctx = sharp.getContext("2d")!;
       sctx.scale(dpr, dpr);
-      paintWallpaper(sctx, w, h, rgb(opts.current.accent));
+      paintWallpaper(sctx, w, h, rgb(opts.current.background));
       const blurred = [12, 30].map((r) => {
         const c = make();
         const x = c.getContext("2d")!;
@@ -182,6 +187,9 @@ export function GlassLayer({ root, options }: { root: RefObject<HTMLElement | nu
       // Dark tint behind text: about 52% at the default translucency of 70.
       gl.uniform1f(u.uTint, 0.37 + ((100 - o.translucency) / 100) * 0.5);
       gl.uniform1f(u.uSolid, o.solid ? 1 : 0);
+      gl.uniform1f(u.uLight, o.light ? 1 : 0);
+      if (o.light) gl.uniform3f(u.uGlass, 0.985, 0.98, 0.972);
+      else gl.uniform3f(u.uGlass, 0.06, 0.065, 0.095);
       gl.drawArrays(gl.TRIANGLES, 0, 3);
     };
 
@@ -202,3 +210,6 @@ export function GlassLayer({ root, options }: { root: RefObject<HTMLElement | nu
 
   return <canvas ref={canvasRef} className="glass-canvas" aria-hidden="true" />;
 }
+
+// The renderer compiles shaders and paints once; reload fully in dev rather than patch it live.
+import.meta.hot?.accept(() => location.reload());

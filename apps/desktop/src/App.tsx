@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { listen } from "@tauri-apps/api/event";
 import { GlassLayer, type GlassOptions } from "./glass/GlassLayer";
 import { TitleBar } from "./components/TitleBar";
@@ -6,10 +6,10 @@ import { Sidebar, type Page } from "./components/Sidebar";
 import { Overview } from "./pages/Overview";
 import { Sessions } from "./pages/Sessions";
 import { ComingSoon } from "./pages/ComingSoon";
+import { Settings } from "./pages/Settings";
 import { useSessions } from "./lib/useSessions";
+import { themeFor, useSettings } from "./lib/settings";
 import { inTauri, type Session } from "./lib/api";
-
-const GLASS: GlassOptions = { accent: "#FF6E01", translucency: 70, solid: false, refraction: 30 };
 
 export function App() {
   const root = useRef<HTMLDivElement>(null);
@@ -17,6 +17,18 @@ export function App() {
   const [query, setQuery] = useState("");
   const [selected, setSelected] = useState<string | null>(null);
   const { sessions, error } = useSessions();
+  const [settings, updateSettings] = useSettings();
+  const glass = useMemo<GlassOptions>(() => {
+    const theme = themeFor(settings.accent);
+    return {
+      accent: theme.accent,
+      background: theme.background,
+      light: theme.light,
+      translucency: settings.translucency,
+      solid: settings.reduceTransparency,
+      refraction: settings.refraction,
+    };
+  }, [settings.accent, settings.translucency, settings.reduceTransparency, settings.refraction]);
 
   const list = sessions ?? [];
   const activeCount = list.filter((s) => s.state === "active" && !s.isSubagent).length;
@@ -47,7 +59,7 @@ export function App() {
 
   return (
     <div className="app" ref={root}>
-      <GlassLayer root={root} options={GLASS} />
+      <GlassLayer root={root} options={glass} />
       <div className="window" data-glass="window">
         <TitleBar query={query} onQuery={search} />
         <div className="body">
@@ -58,7 +70,9 @@ export function App() {
                 Couldn't read sessions: {error}
               </div>
             )}
-            {sessions === null ? (
+            {page === "settings" ? (
+              <Settings settings={settings} onChange={updateSettings} />
+            ) : sessions === null ? (
               <div className="empty">Looking for agent sessions…</div>
             ) : page === "overview" ? (
               <Overview sessions={list} onOpen={open} onViewAll={() => setPage("sessions")} />
