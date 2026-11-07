@@ -104,13 +104,18 @@ pub fn notch_pin(state: State<'_, NotchState>, pinned: bool) {
     state.pinned.store(pinned, Ordering::Relaxed);
 }
 
-/// Pops the island out and keeps it up for `ms`, wherever the cursor is.
-#[tauri::command]
-pub fn notch_announce(state: State<'_, NotchState>, ms: u64) {
+/// Pops the island out and keeps it up for `how_long`, wherever the cursor is.
+pub fn announce(app: &AppHandle, how_long: Duration) {
+    let state = app.state::<NotchState>();
     if let Ok(mut until) = state.announce_until.lock() {
-        let end = Instant::now() + Duration::from_millis(ms.min(30_000));
+        let end = Instant::now() + how_long.min(Duration::from_secs(120));
         *until = Some(until.map_or(end, |u| u.max(end)));
-    }
+    };
+}
+
+#[tauri::command]
+pub fn notch_announce(app: AppHandle, ms: u64) {
+    announce(&app, Duration::from_millis(ms));
 }
 
 /// Applies the notch's part of the settings. The window itself stays put.

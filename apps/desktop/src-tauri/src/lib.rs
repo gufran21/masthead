@@ -1,3 +1,4 @@
+mod approvals;
 mod notch;
 mod settings;
 
@@ -91,7 +92,11 @@ pub fn run() {
             settings::set_settings,
             settings::get_autostart,
             settings::set_autostart,
-            settings::agent_folders
+            settings::agent_folders,
+            approvals::list_approvals,
+            approvals::answer_approval,
+            approvals::get_approval_hook,
+            approvals::set_approval_hook
         ])
         .setup(|app| {
             let open = MenuItem::with_id(app, "open", "Open Masthead", true, None::<&str>)?;
@@ -131,6 +136,8 @@ pub fn run() {
             app.manage(store);
             notch::init(app.handle())?;
             notch::apply(app.handle(), &current);
+            app.manage(approvals::Approvals::load(app.handle()));
+            approvals::start(app.handle());
 
             // Started by Windows at sign-in: stay in the tray with the notch ready.
             if !std::env::args().any(|a| a == STARTED_BY_LOGIN) {

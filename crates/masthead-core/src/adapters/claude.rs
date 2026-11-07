@@ -18,7 +18,8 @@ pub fn default_root() -> Option<PathBuf> {
     config_dir().map(|d| d.join("projects"))
 }
 
-fn config_dir() -> Option<PathBuf> {
+/// Claude Code's config folder: `$CLAUDE_CONFIG_DIR`, or `~/.claude`.
+pub fn config_dir() -> Option<PathBuf> {
     match std::env::var_os("CLAUDE_CONFIG_DIR") {
         Some(dir) if !dir.is_empty() => Some(PathBuf::from(dir)),
         _ => dirs::home_dir().map(|h| h.join(".claude")),

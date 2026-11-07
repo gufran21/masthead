@@ -2,12 +2,14 @@ import { useEffect, useRef, useState, type RefObject } from "react";
 import { listen } from "@tauri-apps/api/event";
 import {
   captureBackdrop,
+  listApprovals,
   inTauri,
   notchAnnounce,
   notchIsland,
   notchPin,
   notchReady,
   openInMain,
+  type Approval,
   type Session,
   type Turn,
 } from "../lib/api";
@@ -17,6 +19,7 @@ import { useSettings } from "../lib/settings";
 import { AgentBadge, StatePill } from "../components/badges";
 import { sessionKey } from "../components/SessionCard";
 import { NotchGlass, type Backdrop } from "./glass";
+import { APPROVAL_H, ApprovalCard } from "./ApprovalCard";
 import logo from "../../src-tauri/icons/64x64.png";
 
 /** Window size; must match FRAME in src-tauri/src/notch.rs. It never changes, so it never flickers. */
@@ -186,6 +189,9 @@ export function Notch() {
   const [finished, setFinished] = useState<Record<string, number>>({});
   const [announcing, setAnnouncing] = useState(false);
   const turns = useRef(new Map<string, Turn>());
+  /** Permission requests waiting for an answer, oldest first. */
+  const [approvals, setApprovals] = useState<Approval[]>([]);
+  const approval = approvals[0];
   const seen = useRef(false);
 
   const all = (sessions ?? []).filter((s) => !s.isSubagent);
@@ -201,7 +207,7 @@ export function Notch() {
     ...all.filter(isFinished).sort((a, b) => finished[sessionKey(b)] - finished[sessionKey(a)]),
     ...live.filter((s) => !isFinished(s)),
   ].slice(0, MAX_ROWS);
-  const size = open ? { w: PEEK_W, h: peekHeight(rows.length) } : PILL;
+  const size = !open ? PILL : approval ? { w: PEEK_W, h: APPROVAL_H } : { w: PEEK_W, h: peekHeight(rows.length) };
 
   const { solid, setBackdrop } = useIslandMotion(islandRef, canvasRef, { shown, ...size });
   const setBackdropRef = useRef(setBackdrop);
@@ -227,8 +233,12 @@ export function Notch() {
         setShown(false);
       }),
       listen<boolean>("notch-hover", ({ payload }) => setHover(payload)),
+      listen<Approval[]>("approvals-changed", ({ payload }) => setApprovals(payload)),
     ]);
-    offs.then(() => notchReady());
+    offs.then(() => {
+      notchReady();
+      listApprovals().then(setApprovals);
+    });
     return () => {
       offs.then((fns) => fns.forEach((off) => off()));
     };
@@ -289,7 +299,7 @@ export function Notch() {
 
   // Hovering the pill expands it; leaving collapses it after a moment unless pinned.
   useEffect(() => {
-    if (shown && (hover || pinned || announcing)) {
+    if (shown && (hover || pinned || announcing || approval)) {
       setOpen(true);
       return;
     }
@@ -300,7 +310,7 @@ export function Notch() {
     }
     const timer = setTimeout(() => setOpen(false), CLOSE_DELAY_MS);
     return () => clearTimeout(timer);
-  }, [shown, hover, pinned, announcing]);
+  }, [shown, hover, pinned, announcing, approval]);
 
   // Once the user has hovered the card, closing it counts as having seen what finished.
   useEffect(() => {
@@ -338,13 +348,15 @@ export function Notch() {
     openInMain(key);
   };
 
-  const status = finishedCount
-    ? `${finishedCount} finished`
-    : active
-      ? `${active} active`
-      : idle
-        ? `${idle} idle`
-        : "No agents";
+  const status = approval
+    ? "Needs you"
+    : finishedCount
+      ? `${finishedCount} finished`
+      : active
+        ? `${active} active`
+        : idle
+          ? `${idle} idle`
+          : "No agents";
 
   return (
     <>
@@ -363,59 +375,63 @@ export function Notch() {
         >
           <span className="dots" aria-hidden="true">
             <span className={`dot running${active ? " on" : ""}`} />
-            <span className={`dot needs${finishedCount ? " on" : ""}`} />
+            <span className={`dot needs${finishedCount || approval ? " on" : ""}`} />
             <span className={`dot idle${idle ? " on" : ""}`} />
           </span>
           <span className="pill-status">{status}</span>
           <span className="pill-tokens">{compact(tokensToday)}</span>
         </button>
 
-        <div className="peek" aria-hidden={!open}>
-          <div className="peek-head">
-            <img src={logo} alt="" />
-            <span>Masthead</span>
-            {finishedCount > 0 && <span className="peek-badge">{finishedCount} finished</span>}
-            <button
-              className="peek-open"
-              onClick={() => {
-                setFinished({});
-                openInMain();
-              }}
-              tabIndex={open ? 0 : -1}
-            >
-              Open
-            </button>
-          </div>
-          {rows.length === 0 ? (
-            <div className="peek-empty">No agent is working right now.</div>
-          ) : (
-            <div className="peek-rows">
-              {rows.map((s) => (
-                <button
-                  key={sessionKey(s)}
-                  className={`peek-row${isFinished(s) ? " finished" : ""}`}
-                  onClick={() => openSession(s)}
-                  tabIndex={open ? 0 : -1}
-                >
-                  <AgentBadge agent={s.agent} />
-                  <span className="peek-text">
-                    <span className="peek-title">{displayTitle(s.title)}</span>
-                    <span className="peek-meta">
-                      {[s.projectName, `${isFinished(s) ? "finished " : ""}${relativeTime(s.lastActivity)}`]
-                        .filter(Boolean)
-                        .join(" · ")}
-                    </span>
-                  </span>
-                  {isFinished(s) ? <span className="pill done">Done</span> : <StatePill session={s} />}
-                </button>
-              ))}
+        {approval && open ? (
+          <ApprovalCard approval={approval} waiting={approvals.length} total={settings.approvalWaitSecs} />
+        ) : (
+          <div className="peek" aria-hidden={!open}>
+            <div className="peek-head">
+              <img src={logo} alt="" />
+              <span>Masthead</span>
+              {finishedCount > 0 && <span className="peek-badge">{finishedCount} finished</span>}
+              <button
+                className="peek-open"
+                onClick={() => {
+                  setFinished({});
+                  openInMain();
+                }}
+                tabIndex={open ? 0 : -1}
+              >
+                Open
+              </button>
             </div>
-          )}
-          <div className="peek-foot">
-            {today.length} {today.length === 1 ? "session" : "sessions"} today · {compact(tokensToday)} tokens
-            {live.length > MAX_ROWS && <span className="more">+{live.length - MAX_ROWS} more</span>}
+            {rows.length === 0 ? (
+              <div className="peek-empty">No agent is working right now.</div>
+            ) : (
+              <div className="peek-rows">
+                {rows.map((s) => (
+                  <button
+                    key={sessionKey(s)}
+                    className={`peek-row${isFinished(s) ? " finished" : ""}`}
+                    onClick={() => openSession(s)}
+                    tabIndex={open ? 0 : -1}
+                  >
+                    <AgentBadge agent={s.agent} />
+                    <span className="peek-text">
+                      <span className="peek-title">{displayTitle(s.title)}</span>
+                      <span className="peek-meta">
+                        {[s.projectName, `${isFinished(s) ? "finished " : ""}${relativeTime(s.lastActivity)}`]
+                          .filter(Boolean)
+                          .join(" · ")}
+                      </span>
+                    </span>
+                    {isFinished(s) ? <span className="pill done">Done</span> : <StatePill session={s} />}
+                  </button>
+                ))}
+              </div>
+            )}
+            <div className="peek-foot">
+              {today.length} {today.length === 1 ? "session" : "sessions"} today · {compact(tokensToday)} tokens
+              {live.length > MAX_ROWS && <span className="more">+{live.length - MAX_ROWS} more</span>}
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </>
   );

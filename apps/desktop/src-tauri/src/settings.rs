@@ -29,6 +29,9 @@ pub struct Settings {
     pub notch_on_finish: bool,
     /// How long the notch then stays open on its own, in seconds.
     pub notch_open_secs: u8,
+    /// How long a permission request waits in the notch before Claude Code asks
+    /// in the terminal instead, in seconds.
+    pub approval_wait_secs: u8,
     /// Closing the main window keeps Masthead running in the tray.
     pub close_to_tray: bool,
 }
@@ -44,6 +47,7 @@ impl Default for Settings {
             notch_reveal_ms: 160,
             notch_on_finish: true,
             notch_open_secs: 6,
+            approval_wait_secs: 30,
             close_to_tray: true,
         }
     }
@@ -64,6 +68,7 @@ impl Settings {
         self.refraction = self.refraction.min(100);
         self.notch_reveal_ms = self.notch_reveal_ms.min(1000);
         self.notch_open_secs = self.notch_open_secs.clamp(2, 30);
+        self.approval_wait_secs = self.approval_wait_secs.clamp(10, 120);
         self
     }
 }
