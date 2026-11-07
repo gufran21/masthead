@@ -6,19 +6,19 @@
 //! A watcher thread reveals the island when the cursor is pushed against the top
 //! edge of the screen, reports hover, and hides it again once the cursor leaves.
 
-use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::Mutex;
 use std::thread;
 use std::time::{Duration, Instant};
 
 use tauri::{AppHandle, Emitter, LogicalSize, Manager, PhysicalPosition, State, WebviewWindow};
 
+use crate::settings::Settings;
+
 pub const LABEL: &str = "notch";
 /// Window size in logical pixels: room for the largest peek card and its shadow.
 /// Must match `FRAME` in src/notch/Notch.tsx.
 const FRAME: (f64, f64) = (440.0, 420.0);
-/// How long the cursor must press against the top edge before the island appears.
-const REVEAL_DWELL: Duration = Duration::from_millis(160);
 /// Half-width of the strip along the top edge that reveals the island, in logical pixels.
 const REVEAL_HALF_WIDTH: f64 = 320.0;
 /// How long the cursor must stay away before the island hides.
@@ -31,8 +31,10 @@ const POLL: Duration = Duration::from_millis(16);
 pub struct NotchState {
     /// The user clicked the pill to keep the peek card open.
     pinned: AtomicBool,
-    /// Turned off from the tray menu: the edge no longer reveals the island.
+    /// Turned off in Settings or the tray menu: the edge no longer reveals the island.
     disabled: AtomicBool,
+    /// How long the cursor must press against the top edge before the island appears.
+    reveal_ms: AtomicU64,
     /// The page has loaded and is listening for events.
     ready: AtomicBool,
     /// The window is excluded from screen capture, so capturing behind it is safe.
@@ -111,11 +113,15 @@ pub fn notch_announce(state: State<'_, NotchState>, ms: u64) {
     }
 }
 
-/// Tray menu: turns the notch off or back on. The window itself stays put.
-pub fn toggle_enabled(app: &AppHandle) {
+/// Applies the notch's part of the settings. The window itself stays put.
+pub fn apply(app: &AppHandle, settings: &Settings) {
     let state = app.state::<NotchState>();
-    let disabled = !state.disabled.load(Ordering::Relaxed);
-    state.disabled.store(disabled, Ordering::Relaxed);
+    state
+        .disabled
+        .store(!settings.notch_enabled, Ordering::Relaxed);
+    state
+        .reveal_ms
+        .store(u64::from(settings.notch_reveal_ms), Ordering::Relaxed);
 }
 
 fn watch(app: AppHandle) {
@@ -162,7 +168,8 @@ fn watch(app: AppHandle) {
             let in_strip = (cx - FRAME.0 / 2.0).abs() <= REVEAL_HALF_WIDTH;
             if at_edge && in_strip {
                 let since = *pressing_since.get_or_insert_with(Instant::now);
-                if since.elapsed() >= REVEAL_DWELL {
+                if since.elapsed() >= Duration::from_millis(state.reveal_ms.load(Ordering::Relaxed))
+                {
                     pressing_since = None;
                     away_since = None;
                     revealed = true;

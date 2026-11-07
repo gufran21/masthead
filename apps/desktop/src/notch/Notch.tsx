@@ -13,6 +13,7 @@ import {
 } from "../lib/api";
 import { compact, displayTitle, isToday, relativeTime, totalTokens } from "../lib/format";
 import { useSessions } from "../lib/useSessions";
+import { useSettings } from "../lib/settings";
 import { AgentBadge, StatePill } from "../components/badges";
 import { sessionKey } from "../components/SessionCard";
 import { NotchGlass, type Backdrop } from "./glass";
@@ -28,8 +29,6 @@ const ROW_H = 58;
 const MAX_ROWS = 5;
 const CLOSE_DELAY_MS = 260;
 const CAPTURE_MS = 500;
-/** How long the notch stays open on its own when an agent finishes. */
-const ANNOUNCE_MS = 6000;
 /** How long to wait for the first capture before appearing without it. */
 const FIRST_CAPTURE_MS = 150;
 
@@ -171,6 +170,10 @@ function useIslandMotion(
 
 export function Notch() {
   const { sessions } = useSessions();
+  const [settings] = useSettings("notch");
+  const openMs = settings.notchOpenSecs * 1000;
+  const popOnFinish = useRef(false);
+  popOnFinish.current = settings.notchEnabled && settings.notchOnFinish;
   // In a plain browser (pnpm dev:web) there is no edge to push, so start shown.
   const [shown, setShown] = useState(!inTauri);
   const [hover, setHover] = useState(false);
@@ -253,18 +256,18 @@ export function Notch() {
       for (const key of fresh) next[key] = now;
       return next;
     });
-    if (fresh.length > 0) {
+    if (fresh.length > 0 && popOnFinish.current) {
       seen.current = false;
       setAnnouncing(true);
-      notchAnnounce(ANNOUNCE_MS);
+      notchAnnounce(openMs);
     }
-  }, [sessions]);
+  }, [sessions]); // eslint-disable-line react-hooks/exhaustive-deps -- reacts to new polls only
 
   useEffect(() => {
     if (!announcing) return;
-    const timer = setTimeout(() => setAnnouncing(false), ANNOUNCE_MS);
+    const timer = setTimeout(() => setAnnouncing(false), openMs);
     return () => clearTimeout(timer);
-  }, [announcing, finished]);
+  }, [announcing, finished, openMs]);
 
   // Keep the glass in step with what's behind it while the island is out.
   useEffect(() => {

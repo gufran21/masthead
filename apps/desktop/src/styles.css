@@ -1,7 +1,8 @@
 :root {
   --accent: #ff6e01;
-  --accent-soft: rgba(255, 110, 1, 0.22);
-  --accent-text: #ffb07a;
+  /* Everything accent-coloured derives from --accent, which Settings changes. */
+  --accent-soft: color-mix(in srgb, var(--accent) 22%, transparent);
+  --accent-text: color-mix(in srgb, var(--accent) 50%, white);
   --text: #ffffff;
   --text-2: rgba(255, 255, 255, 0.74);
   --text-3: rgba(255, 255, 255, 0.56);
@@ -10,9 +11,32 @@
   --running-soft: rgba(48, 209, 88, 0.2);
   --running-text: #9cf7ba;
   --idle: rgba(255, 255, 255, 0.45);
+  /* Set from Settings: the background colour, and what sits on the accent. */
+  --theme: var(--accent);
+  --on-accent: #ffffff;
+  /* Overlays (hover, borders, fills) and panel colour, as r, g, b. */
+  --ink: 255, 255, 255;
+  --surface: 20, 21, 28;
+  --text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
   --font: "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif;
   --mono: "Cascadia Code", Consolas, ui-monospace, monospace;
   color-scheme: dark;
+}
+
+/* Light themes (White, Warm white): dark text, light glass. */
+:root[data-theme="light"] {
+  --accent-text: color-mix(in srgb, var(--accent) 75%, black);
+  --text: #1d1d1f;
+  --text-2: rgba(0, 0, 0, 0.66);
+  --text-3: rgba(0, 0, 0, 0.5);
+  --line: rgba(0, 0, 0, 0.1);
+  --running-soft: rgba(48, 209, 88, 0.18);
+  --running-text: #1b7f3a;
+  --idle: rgba(0, 0, 0, 0.4);
+  --ink: 0, 0, 0;
+  --surface: 255, 255, 255;
+  --text-shadow: none;
+  color-scheme: light;
 }
 
 * {
@@ -27,7 +51,8 @@ body,
 }
 
 body {
-  background: #090b14;
+  /* Close to the glass over the theme colour, for the moment before WebGL draws. */
+  background: color-mix(in srgb, var(--theme) 45%, rgb(var(--surface)));
   color: var(--text);
   font: 14px/1.45 var(--font);
   -webkit-font-smoothing: antialiased;
@@ -45,7 +70,7 @@ input {
   position: relative;
   height: 100%;
   overflow: hidden;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  text-shadow: var(--text-shadow);
 }
 
 .glass-canvas {
@@ -59,8 +84,8 @@ input {
 
 /* CSS frost fallback for when WebGL is unavailable; the WebGL layer turns it off. */
 [data-glass] {
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(var(--ink), 0.08);
+  border: 1px solid rgba(var(--ink), 0.14);
   backdrop-filter: blur(24px) saturate(160%);
 }
 [data-glass="accent"] {
@@ -120,17 +145,17 @@ input {
   height: 34px;
   padding: 0 8px 0 12px;
   border-radius: 17px;
-  background: rgba(8, 9, 14, 0.55);
-  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(var(--surface), 0.55);
+  border: 1px solid rgba(var(--ink), 0.14);
   box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.35);
   color: var(--text-2);
   text-shadow: none;
 }
 .search:focus-within {
-  border-color: rgba(255, 110, 1, 0.7);
+  border-color: color-mix(in srgb, var(--accent) 70%, transparent);
   box-shadow:
     inset 0 1px 2px rgba(0, 0, 0, 0.35),
-    0 0 0 3px rgba(255, 110, 1, 0.18);
+    0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent);
 }
 .search input {
   flex: 1;
@@ -152,7 +177,7 @@ input {
   font: 11px var(--font);
   padding: 2px 7px;
   border-radius: 7px;
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(var(--ink), 0.1);
   color: var(--text-2);
 }
 .window-controls {
@@ -170,7 +195,7 @@ input {
   cursor: default;
 }
 .window-controls button:hover {
-  background: rgba(255, 255, 255, 0.08);
+  background: rgba(var(--ink), 0.08);
   color: var(--text);
 }
 .window-controls button.close:hover {
@@ -206,7 +231,7 @@ input {
   cursor: pointer;
 }
 .nav-item:hover {
-  background: rgba(255, 255, 255, 0.07);
+  background: rgba(var(--ink), 0.07);
   color: var(--text);
 }
 .nav-item.on {
@@ -218,7 +243,7 @@ input {
   font-size: 11px;
   padding: 1px 7px;
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.12);
+  background: rgba(var(--ink), 0.12);
   color: var(--text-2);
 }
 .sidebar .grow {
@@ -231,7 +256,7 @@ main {
   padding: 24px 28px 28px;
   user-select: text;
   scrollbar-width: thin;
-  scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+  scrollbar-color: rgba(var(--ink), 0.2) transparent;
 }
 main > * {
   max-width: 1400px;
@@ -272,11 +297,11 @@ main > * {
   color: var(--running-text);
 }
 .pill.idle {
-  background: rgba(255, 255, 255, 0.12);
+  background: rgba(var(--ink), 0.12);
   color: var(--text-2);
 }
 .pill.ended {
-  background: rgba(255, 255, 255, 0.06);
+  background: rgba(var(--ink), 0.06);
   color: var(--text-3);
 }
 .stats {
@@ -290,16 +315,16 @@ main > * {
 .tile {
   border-radius: 18px;
   padding: 14px 16px;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.11);
+  background: rgba(var(--ink), 0.05);
+  border: 1px solid rgba(var(--ink), 0.11);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.12),
+    inset 0 1px 0 rgba(var(--ink), 0.12),
     0 10px 30px rgba(0, 0, 0, 0.18);
   backdrop-filter: blur(18px) saturate(140%);
 }
 .tile.alert {
-  background: rgba(255, 110, 1, 0.16);
-  border-color: rgba(255, 110, 1, 0.4);
+  background: color-mix(in srgb, var(--accent) 16%, transparent);
+  border-color: color-mix(in srgb, var(--accent) 40%, transparent);
 }
 .stat {
   padding: 12px 16px 13px;
@@ -409,17 +434,17 @@ main > * {
 }
 .session-card:hover {
   transform: translateY(-1px);
-  border-color: rgba(255, 255, 255, 0.2);
+  border-color: rgba(var(--ink), 0.2);
 }
 .session-card:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
 }
 .session-card.selected {
-  border-color: rgba(255, 110, 1, 0.7);
+  border-color: color-mix(in srgb, var(--accent) 70%, transparent);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.12),
-    0 0 0 3px rgba(255, 110, 1, 0.16),
+    inset 0 1px 0 rgba(var(--ink), 0.12),
+    0 0 0 3px color-mix(in srgb, var(--accent) 16%, transparent),
     0 10px 30px rgba(0, 0, 0, 0.18);
 }
 .session-card.ended {
@@ -494,7 +519,7 @@ main > * {
 .quiet {
   padding: 22px 16px;
   border-radius: 14px;
-  border: 1px dashed rgba(255, 255, 255, 0.14);
+  border: 1px dashed rgba(var(--ink), 0.14);
   color: var(--text-3);
   font-size: 13px;
   text-align: center;
@@ -519,7 +544,7 @@ main > * {
   cursor: pointer;
 }
 .section-toggle:hover {
-  background: rgba(255, 255, 255, 0.07);
+  background: rgba(var(--ink), 0.07);
   color: var(--text);
 }
 .session-card .meter {
@@ -587,22 +612,22 @@ main > * {
   padding: 0 14px;
   border-radius: 15px;
   border: none;
-  background: rgba(255, 255, 255, 0.08);
+  background: rgba(var(--ink), 0.08);
   color: var(--text-2);
   cursor: pointer;
 }
 .chip.on {
-  background: rgba(255, 255, 255, 0.2);
+  background: rgba(var(--ink), 0.2);
   color: var(--text);
 }
 /* Glass controls: flat translucent fill, even rim, frosted backdrop. */
 .glass-control {
   height: 36px;
   border-radius: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  background: rgba(26, 27, 35, 0.5);
+  border: 1px solid rgba(var(--ink), 0.16);
+  background: rgba(var(--surface), 0.5);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.1),
+    inset 0 1px 0 rgba(var(--ink), 0.1),
     0 6px 18px rgba(0, 0, 0, 0.25);
   backdrop-filter: blur(18px) saturate(170%);
   color: var(--text);
@@ -613,14 +638,14 @@ main > * {
 }
 .glass-control:hover,
 .dropdown.open .glass-control {
-  background: rgba(40, 41, 52, 0.58);
-  border-color: rgba(255, 255, 255, 0.26);
+  background: rgba(var(--surface), 0.58);
+  border-color: rgba(var(--ink), 0.26);
 }
 .glass-control:focus-visible {
   outline: none;
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.22),
-    0 0 0 3px rgba(255, 110, 1, 0.2);
+    inset 0 1px 0 rgba(var(--ink), 0.22),
+    0 0 0 3px color-mix(in srgb, var(--accent) 20%, transparent);
 }
 .toolbar {
   position: relative;
@@ -630,7 +655,7 @@ main > * {
   width: 1px;
   height: 22px;
   margin: 0 4px;
-  background: rgba(255, 255, 255, 0.14);
+  background: rgba(var(--ink), 0.14);
 }
 .segmented {
   display: inline-flex;
@@ -638,8 +663,8 @@ main > * {
   height: 36px;
   padding: 3px;
   border-radius: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  background: rgba(10, 11, 16, 0.42);
+  border: 1px solid rgba(var(--ink), 0.14);
+  background: rgba(var(--surface), 0.42);
   box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.35);
   backdrop-filter: blur(18px) saturate(170%);
 }
@@ -658,10 +683,10 @@ main > * {
 .segmented button.on {
   color: var(--text);
   font-weight: 600;
-  border-color: rgba(255, 255, 255, 0.16);
-  background: rgba(255, 255, 255, 0.14);
+  border-color: rgba(var(--ink), 0.16);
+  background: rgba(var(--ink), 0.14);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.28),
+    inset 0 1px 0 rgba(var(--ink), 0.28),
     0 2px 8px rgba(0, 0, 0, 0.25);
 }
 .dropdown {
@@ -703,11 +728,11 @@ main > * {
   list-style: none;
   border-radius: 20px;
   /* Dark see-through glass with an even, bright rim. */
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  background: rgba(18, 19, 25, 0.62);
+  border: 1px solid rgba(var(--ink), 0.18);
+  background: rgba(var(--surface), 0.62);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.14),
-    inset 0 0 0 1px rgba(255, 255, 255, 0.04),
+    inset 0 1px 0 rgba(var(--ink), 0.14),
+    inset 0 0 0 1px rgba(var(--ink), 0.04),
     0 24px 60px rgba(0, 0, 0, 0.5);
   backdrop-filter: blur(28px) saturate(180%);
   animation: menu-in 0.14s ease-out;
@@ -728,14 +753,14 @@ main > * {
   padding: 0 12px;
   border-radius: 12px;
   font-size: 13.5px;
-  color: rgba(255, 255, 255, 0.82);
+  color: rgba(var(--ink), 0.82);
   white-space: nowrap;
   cursor: pointer;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
 }
 .dropdown-menu li.active {
-  background: rgba(255, 255, 255, 0.09);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  background: rgba(var(--ink), 0.09);
+  box-shadow: inset 0 1px 0 rgba(var(--ink), 0.12);
   color: var(--text);
 }
 .dropdown-menu li.selected {
@@ -780,7 +805,7 @@ main > * {
   font-weight: 600;
   padding: 2px 10px;
   border-radius: 11px;
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(var(--ink), 0.1);
   color: var(--text-2);
 }
 .list-card {
@@ -815,7 +840,7 @@ main > * {
   gap: 8px;
   padding: 10px 10px 12px 12px;
   border-radius: 14px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(var(--ink), 0.08);
   background: rgba(0, 0, 0, 0.22);
   box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.3);
 }
@@ -832,9 +857,9 @@ main > * {
   height: 34px;
   border-radius: 10px;
   color: #ffc9a3;
-  border: 1px solid rgba(255, 110, 1, 0.35);
-  background: rgba(255, 110, 1, 0.2);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18);
+  border: 1px solid color-mix(in srgb, var(--accent) 35%, transparent);
+  background: color-mix(in srgb, var(--accent) 20%, transparent);
+  box-shadow: inset 0 1px 0 rgba(var(--ink), 0.18);
 }
 .project-name {
   flex: 1;
@@ -894,7 +919,7 @@ main > * {
   flex-direction: column;
   padding: 10px 12px;
   border-radius: 12px;
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(var(--ink), 0.05);
 }
 .mini-stats .label {
   font-size: 11.5px;
@@ -914,7 +939,7 @@ main > * {
   height: 8px;
   border-radius: 4px;
   overflow: hidden;
-  background: rgba(255, 255, 255, 0.08);
+  background: rgba(var(--ink), 0.08);
 }
 .breakdown .bar > span {
   min-width: 3px;
@@ -969,7 +994,7 @@ main > * {
   display: block;
   height: 5px;
   border-radius: 3px;
-  background: rgba(255, 255, 255, 0.12);
+  background: rgba(var(--ink), 0.12);
   margin-top: 6px;
   overflow: hidden;
 }
@@ -991,4 +1016,209 @@ main > * {
 .coming p {
   color: var(--text-2);
   margin: 0;
+}
+
+/* Settings */
+.settings-page {
+  max-width: 820px;
+}
+.settings-group {
+  padding: 6px 18px;
+  margin-bottom: 16px;
+}
+.settings-group h2 {
+  margin: 12px 0 4px;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--text-2);
+}
+.settings-row {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  min-height: 56px;
+  padding: 8px 0;
+}
+.settings-text {
+  flex: 1;
+  min-width: 0;
+}
+.settings-label {
+  font-weight: 600;
+}
+.settings-hint {
+  margin-top: 2px;
+  font-size: 12.5px;
+  color: var(--text-3);
+}
+.settings-control {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  max-width: 55%;
+}
+.settings-row.disabled .settings-label {
+  color: var(--text-3);
+}
+.settings-value {
+  color: var(--text-2);
+  font-variant-numeric: tabular-nums;
+}
+.settings-path {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-family: var(--mono);
+  font-size: 12.5px;
+  color: var(--text-2);
+}
+.settings-button {
+  padding: 0 16px;
+  font-weight: 600;
+}
+.segmented button:disabled {
+  cursor: default;
+  opacity: 0.45;
+}
+
+.swatches {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+.swatch-divider {
+  width: 1px;
+  margin: 4px 2px;
+  background: var(--line);
+}
+.swatch {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 1px solid rgba(var(--ink), 0.22);
+  color: #fff;
+  cursor: pointer;
+}
+.swatch svg {
+  width: 14px;
+  height: 14px;
+}
+.swatch.on {
+  box-shadow:
+    0 0 0 2px rgba(var(--surface), 0.9),
+    0 0 0 4px rgba(var(--ink), 0.85);
+}
+.swatch:focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 0 2px rgba(var(--surface), 0.9),
+    0 0 0 4px var(--accent);
+}
+.toggle {
+  position: relative;
+  width: 44px;
+  height: 26px;
+  padding: 0;
+  border-radius: 13px;
+  border: 1px solid rgba(var(--ink), 0.16);
+  background: rgba(var(--surface), 0.5);
+  cursor: pointer;
+  transition:
+    background 0.18s ease,
+    border-color 0.18s ease;
+}
+.toggle .knob {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+  transition: transform 0.22s cubic-bezier(0.3, 1.4, 0.5, 1);
+}
+.toggle.on {
+  background: var(--accent);
+  border-color: transparent;
+}
+.toggle.on .knob {
+  transform: translateX(18px);
+  background: var(--on-accent);
+}
+.toggle:disabled {
+  cursor: default;
+  opacity: 0.4;
+}
+.toggle:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 35%, transparent);
+}
+
+.slider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.slider output {
+  width: 38px;
+  text-align: right;
+  color: var(--text-2);
+  font-variant-numeric: tabular-nums;
+}
+.slider input {
+  width: 200px;
+  height: 22px;
+  margin: 0;
+  background: none;
+  cursor: pointer;
+  appearance: none;
+}
+.slider input:disabled {
+  cursor: default;
+  opacity: 0.4;
+}
+/* Two flat colours with a hard edge: the filled part and the rest. */
+.slider input::-webkit-slider-runnable-track {
+  height: 6px;
+  border-radius: 3px;
+  background: linear-gradient(
+    to right,
+    var(--accent) var(--fill),
+    rgba(var(--ink), 0.14) var(--fill)
+  );
+}
+.slider input::-webkit-slider-thumb {
+  width: 18px;
+  height: 18px;
+  margin-top: -6px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.45);
+  appearance: none;
+}
+.slider input:focus-visible {
+  outline: none;
+}
+.slider input:focus-visible::-webkit-slider-thumb {
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 35%, transparent);
+}
+
+/* Light themes: the few colours that are light-on-dark by design. */
+:root[data-theme="light"] .tag {
+  color: #5b45d6;
+}
+:root[data-theme="light"] .project-box {
+  background: rgba(255, 255, 255, 0.45);
+}
+:root[data-theme="light"] .folder-tile {
+  color: #a3480c;
+}
+:root[data-theme="light"] .project-error {
+  color: #b42318;
 }

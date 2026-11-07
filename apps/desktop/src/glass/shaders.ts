@@ -19,6 +19,9 @@ uniform vec3 uA;
 uniform float uRefr;
 uniform float uTint;
 uniform float uSolid;
+// Light themes: light glass, softer shadows, whiter tiles.
+uniform float uLight;
+uniform vec3 uGlass;
 
 float sdB(vec2 p, vec4 r, float rad) {
   rad = min(rad, min(r.z, r.w));
@@ -50,7 +53,7 @@ vec3 topCol(vec2 q, vec4 r, vec4 k, float heavy) {
   c.b = mix(tx(uB1, q + off * 1.08).b, tx(uB2, q + off * 1.08).b, heavy);
   float t = k.y > 2.5 ? uTint * 0.9 : uTint;
   t = mix(t, 0.94, uSolid);
-  c = mix(c, vec3(0.06, 0.065, 0.095), t);
+  c = mix(c, uGlass, t);
   return c + spec(e);
 }
 void main() {
@@ -70,7 +73,7 @@ void main() {
       if (d < 1.0) { dT = d; rT = r; kT = k; hasT = 1.0; }
     } else if (d < 1.0) { dN = d; rN = r; kN = k; hasN = 1.0; }
   }
-  col *= 1.0 - 0.42 * (1.0 - smoothstep(-20.0, 56.0, sh));
+  col *= 1.0 - mix(0.42, 0.14, uLight) * (1.0 - smoothstep(-20.0, 56.0, sh));
   if (hasT > 0.5) col = mix(col, topCol(p, rT, kT, 0.0), clamp(0.5 - dT, 0.0, 1.0));
   if (hasN > 0.5) {
     float e = max(-dN, 0.0);
@@ -80,7 +83,7 @@ void main() {
     float bend = x * x * (3.0 - 2.0 * x) * x;
     vec2 off = -n * bend * uRefr * 0.55 * (1.0 - uSolid);
     vec3 g = hasT > 0.5 ? topCol(p + off, rT, kT, 1.0) : tx(uB2, p + off);
-    if (kN.y < 1.5) g = mix(g, vec3(1.0), 0.06);
+    if (kN.y < 1.5) g = mix(g, vec3(1.0), mix(0.06, 0.5, uLight));
     else if (kN.y < 2.5) g = mix(g, uA, 0.80);
     else g = mix(g, uA, 0.26);
     g += spec(e) * 0.9;
@@ -89,3 +92,6 @@ void main() {
   gl_FragColor = vec4(col, 1.0);
 }
 `;
+
+// The renderer compiles shaders and paints once; reload fully in dev rather than patch it live.
+import.meta.hot?.accept(() => location.reload());

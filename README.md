@@ -20,9 +20,10 @@ notch that stays at the top of your screen.
 |---|---|
 | Unified list of Claude Code and Codex sessions: title, project, model, state, tokens, context use | Available |
 | Live updates while agents work; close-to-tray | Available |
-| Liquid-glass UI rendered with WebGL, orange accent | Available |
+| Liquid-glass UI rendered with WebGL, in one flat theme colour (orange by default) | Available |
 | Notch at the top of the screen: push the cursor to the top edge for a status pill, hover for a peek card of live sessions | Available |
 | Notch pops open when an agent finishes its turn and highlights which one | Available |
+| Settings: theme colour (seven colours, or black, grey, white and warm white with a light theme), glass, notch behaviour, start with Windows, close to tray | Available |
 | Approve or deny agent prompts from the notch | Planned |
 | Cursor, Gemini CLI and other agents | Planned |
 | System tools: processes, ports, dev servers, cleanup, health checks | Planned |
