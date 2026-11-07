@@ -212,3 +212,116 @@ body.notch-body #root {
   margin-left: auto;
   color: var(--text-2);
 }
+
+/* A permission request. */
+.approval {
+  gap: 0;
+}
+.approval-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 34px;
+  padding: 0 4px;
+}
+.approval-head .agent-badge,
+.approval-head img {
+  width: 22px;
+  height: 22px;
+}
+.approval-title {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-size: 13.5px;
+}
+.approval-left {
+  color: var(--text-3);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+.approval-input {
+  height: 62px;
+  margin: 6px 0 0;
+  padding: 8px 10px;
+  overflow: hidden;
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.32);
+  color: var(--text);
+  font: 12px/1.45 var(--mono);
+  white-space: pre-wrap;
+  word-break: break-all;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+}
+.approval-meta {
+  height: 22px;
+  padding: 4px 4px 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  color: var(--text-3);
+  font-size: 12px;
+}
+.approval-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+}
+.approval-actions .grow {
+  flex: 1;
+}
+.approval-btn {
+  height: 32px;
+  padding: 0 16px;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text);
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.approval-btn:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+.approval-btn.quiet {
+  padding: 0 10px;
+  border-color: transparent;
+  background: none;
+  color: var(--text-2);
+  font-weight: 500;
+}
+.approval-btn.quiet:hover {
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.08);
+}
+.approval-btn.allow {
+  border-color: transparent;
+  background: var(--accent);
+  color: var(--on-accent);
+}
+.approval-btn.allow:hover {
+  background: color-mix(in srgb, var(--accent) 85%, white);
+}
+.approval-btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.approval-timer {
+  height: 3px;
+  margin: 10px 4px 0;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.1);
+  overflow: hidden;
+}
+.approval-timer span {
+  display: block;
+  height: 100%;
+  background: var(--accent);
+  transition: width 0.25s linear;
+}

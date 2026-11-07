@@ -35,6 +35,37 @@ export interface Session {
 
 export const inTauri = typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
 
+/** A Claude Code permission request waiting in the notch. Mirrors `approvals::Approval`. */
+export interface Approval {
+  id: number;
+  sessionId: string;
+  projectName: string | null;
+  projectPath: string | null;
+  tool: string;
+  summary: string;
+  detail: string | null;
+  deadlineMs: number;
+}
+
+export type ApprovalAnswer = "allow" | "deny" | "terminal";
+
+export async function listApprovals(): Promise<Approval[]> {
+  return inTauri ? invoke<Approval[]>("list_approvals") : [];
+}
+
+export async function answerApproval(id: number, answer: ApprovalAnswer): Promise<void> {
+  await invoke("answer_approval", { id, answer });
+}
+
+/** Whether Masthead's hook is in Claude Code's settings; null outside the desktop app. */
+export async function getApprovalHook(): Promise<boolean | null> {
+  return inTauri ? invoke<boolean>("get_approval_hook") : null;
+}
+
+export async function setApprovalHook(enabled: boolean): Promise<boolean> {
+  return invoke<boolean>("set_approval_hook", { enabled });
+}
+
 /** The notch page is listening for events; Rust may show its window. */
 export async function notchReady(): Promise<void> {
   if (inTauri) await invoke("notch_ready");

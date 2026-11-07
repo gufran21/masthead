@@ -1,6 +1,6 @@
 import { Fragment, useEffect, useId, useState, type ReactNode } from "react";
 import { getVersion } from "@tauri-apps/api/app";
-import { inTauri } from "../lib/api";
+import { getApprovalHook, inTauri, setApprovalHook } from "../lib/api";
 import {
   agentFolders,
   DEFAULT_SETTINGS,
@@ -33,6 +33,7 @@ const REVEAL = [
   { label: "Relaxed", value: 400 },
 ];
 const OPEN_FOR = [3, 6, 10, 20];
+const APPROVAL_WAIT = [15, 30, 60, 120];
 
 interface Props {
   settings: SettingsValues;
@@ -42,11 +43,16 @@ interface Props {
 export function Settings({ settings, onChange }: Props) {
   const [autostart, setAutostartState] = useState<boolean | null>(null);
   const [autostartError, setAutostartError] = useState("");
+  const [approvalHook, setApprovalHookState] = useState<boolean | null>(null);
+  const [approvalError, setApprovalError] = useState("");
   const [version, setVersion] = useState("");
   const [folders, setFolders] = useState<AgentFolders | null>(null);
 
   useEffect(() => {
     getAutostart().then(setAutostartState);
+    getApprovalHook()
+      .then(setApprovalHookState)
+      .catch((e) => setApprovalError(String(e)));
     agentFolders().then(setFolders);
     if (inTauri) getVersion().then(setVersion);
   }, []);
@@ -57,6 +63,15 @@ export function Settings({ settings, onChange }: Props) {
       setAutostartState(await setAutostart(on));
     } catch (e) {
       setAutostartError(String(e));
+    }
+  };
+
+  const toggleApprovalHook = async (on: boolean) => {
+    setApprovalError("");
+    try {
+      setApprovalHookState(await setApprovalHook(on));
+    } catch (e) {
+      setApprovalError(String(e));
     }
   };
 
@@ -155,6 +170,36 @@ export function Settings({ settings, onChange }: Props) {
             value={settings.notchOpenSecs}
             disabled={notchOff || !settings.notchOnFinish}
             onChange={(notchOpenSecs) => onChange({ notchOpenSecs })}
+          />
+        </Row>
+        <Row
+          label="Approve from the notch"
+          hint={
+            approvalError ||
+            (approvalHook === null
+              ? "Available in the desktop app."
+              : "Claude Code's permission requests appear in the notch with Allow and Deny. Adds a hook to Claude Code's settings; new sessions pick it up.")
+          }
+          disabled={approvalHook === null || notchOff}
+        >
+          <Toggle
+            label="Approve from the notch"
+            on={approvalHook ?? false}
+            disabled={approvalHook === null}
+            onChange={toggleApprovalHook}
+          />
+        </Row>
+        <Row
+          label="Wait for an answer"
+          hint="Then Claude Code asks in the terminal instead."
+          disabled={!approvalHook || notchOff}
+        >
+          <Segmented
+            label="Wait for an answer"
+            options={APPROVAL_WAIT.map((s) => ({ label: `${s} s`, value: s }))}
+            value={settings.approvalWaitSecs}
+            disabled={!approvalHook || notchOff}
+            onChange={(approvalWaitSecs) => onChange({ approvalWaitSecs })}
           />
         </Row>
       </Group>

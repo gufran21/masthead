@@ -13,6 +13,7 @@ export interface Settings {
   notchRevealMs: number;
   notchOnFinish: boolean;
   notchOpenSecs: number;
+  approvalWaitSecs: number;
   closeToTray: boolean;
 }
 
@@ -25,6 +26,7 @@ export const DEFAULT_SETTINGS: Settings = {
   notchRevealMs: 160,
   notchOnFinish: true,
   notchOpenSecs: 6,
+  approvalWaitSecs: 30,
   closeToTray: true,
 };
 
