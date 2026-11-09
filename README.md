@@ -11,7 +11,7 @@ sessions (Claude Code, Codex and more), so you always know which agent is workin
 what it costs and where it's running. It has a liquid-glass interface and a small
 notch that stays at the top of your screen.
 
-> **Status: early development.** The session monitor works today; the notch, system
+> **Status: early development.** Sessions, the notch and approvals work today; system
 > tools and more agents are on the way. Expect breaking changes.
 
 ## Features
@@ -27,6 +27,16 @@ notch that stays at the top of your screen.
 | Approve or deny Claude Code permission requests from the notch (opt-in; Codex later) | Available |
 | Cursor, Gemini CLI and other agents | Planned |
 | System tools: processes, ports, dev servers, cleanup, health checks | Planned |
+
+## Download
+
+Get the latest installer from [Releases](https://github.com/gufran21/masthead/releases):
+`Masthead_<version>_x64-setup.exe` installs for your user only, with no administrator
+rights needed; the `.msi` is there for machine-wide installs. What changed in each version
+is in [CHANGELOG.md](CHANGELOG.md).
+
+The installers aren't code-signed yet, so Windows SmartScreen may warn about an unknown
+publisher: choose **More info** → **Run anyway**, or build from source below.
 
 ## Privacy
 
