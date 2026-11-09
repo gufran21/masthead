@@ -26,7 +26,8 @@ notch that stays at the top of your screen.
 | Settings: theme colour (seven colours, or black, grey, white and warm white with a light theme), glass, notch behaviour, start with Windows, close to tray | Available |
 | Approve or deny Claude Code permission requests from the notch (opt-in; Codex later) | Available |
 | Cursor, Gemini CLI and other agents | Planned |
-| System tools: processes, ports, dev servers, cleanup, health checks | Planned |
+| Ports: listening servers with their process, project and agent; open or stop them | Available |
+| System tools: processes, cleanup, health checks | Planned |
 
 ## Privacy
 

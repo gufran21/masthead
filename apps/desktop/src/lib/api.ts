@@ -66,6 +66,98 @@ export async function setApprovalHook(enabled: boolean): Promise<boolean> {
   return invoke<boolean>("set_approval_hook", { enabled });
 }
 
+/** A listening TCP port and its process. Mirrors `ports::Listener`. */
+export interface Listener {
+  port: number;
+  addresses: string[];
+  exposed: boolean;
+  pid: number;
+  name: string;
+  exe: string | null;
+  command: string | null;
+  cwd: string | null;
+  startedAt: number | null;
+  memoryBytes: number;
+  mine: boolean;
+}
+
+export async function listPorts(): Promise<Listener[]> {
+  if (!inTauri) return samplePorts();
+  return invoke<Listener[]>("list_ports");
+}
+
+/** Opens http://localhost:<port> in the default browser. */
+export async function openPort(port: number): Promise<void> {
+  if (inTauri) await invoke("open_port", { port });
+  else window.open(`http://localhost:${port}`, "_blank");
+}
+
+/** Opens the folder the process on `port` runs from (Rust finds the folder itself). */
+export async function openPortFolder(port: number, pid: number): Promise<void> {
+  if (!inTauri) throw new Error("Opening folders works in the desktop app");
+  await invoke("open_port_folder", { port, pid });
+}
+
+/** Stops the process on `port`; Rust re-checks that it is the user's own. */
+export async function stopPort(port: number, pid: number): Promise<void> {
+  if (!inTauri) throw new Error("Stopping processes works in the desktop app");
+  await invoke("stop_port", { port, pid });
+}
+
+function samplePorts(): Listener[] {
+  const now = Math.floor(Date.now() / 1000);
+  const base = { exe: null, mine: true, exposed: false };
+  return [
+    {
+      ...base,
+      port: 3000,
+      addresses: ["127.0.0.1", "::1"],
+      pid: 18432,
+      name: "node.exe",
+      command: "node node_modules/next/dist/bin/next dev",
+      cwd: "D:\\Code\\web-app",
+      startedAt: now - 47 * 60,
+      memoryBytes: 412 * 1024 * 1024,
+    },
+    {
+      ...base,
+      port: 5173,
+      addresses: ["0.0.0.0"],
+      exposed: true,
+      pid: 20116,
+      name: "node.exe",
+      command: "node vite --host",
+      cwd: "D:\\Code\\api-server\\ui",
+      startedAt: now - 5 * 60,
+      memoryBytes: 168 * 1024 * 1024,
+    },
+    {
+      ...base,
+      port: 8000,
+      addresses: ["127.0.0.1"],
+      pid: 9920,
+      name: "python.exe",
+      command: "python -m http.server 8000",
+      cwd: "D:\\Code\\docs",
+      startedAt: now - 26 * 3600,
+      memoryBytes: 24 * 1024 * 1024,
+    },
+    {
+      ...base,
+      port: 135,
+      addresses: ["0.0.0.0", "::"],
+      exposed: true,
+      pid: 1184,
+      name: "svchost.exe",
+      command: null,
+      cwd: null,
+      startedAt: now - 3 * 86400,
+      memoryBytes: 9 * 1024 * 1024,
+      mine: false,
+    },
+  ];
+}
+
 /** The notch page is listening for events; Rust may show its window. */
 export async function notchReady(): Promise<void> {
   if (inTauri) await invoke("notch_ready");

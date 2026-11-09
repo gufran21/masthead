@@ -1,5 +1,6 @@
 mod approvals;
 mod notch;
+mod ports;
 mod settings;
 
 use std::sync::{Arc, Mutex};
@@ -75,6 +76,7 @@ pub fn run() {
     tauri::Builder::default()
         .manage::<Store>(Arc::new(Mutex::new(SessionStore::new(Roots::detect()))))
         .manage(notch::NotchState::default())
+        .manage(ports::Processes::default())
         .plugin(tauri_plugin_autostart::init(
             tauri_plugin_autostart::MacosLauncher::LaunchAgent,
             Some(vec![STARTED_BY_LOGIN]),
@@ -96,7 +98,11 @@ pub fn run() {
             approvals::list_approvals,
             approvals::answer_approval,
             approvals::get_approval_hook,
-            approvals::set_approval_hook
+            approvals::set_approval_hook,
+            ports::list_ports,
+            ports::open_port,
+            ports::open_port_folder,
+            ports::stop_port
         ])
         .setup(|app| {
             let open = MenuItem::with_id(app, "open", "Open Masthead", true, None::<&str>)?;
