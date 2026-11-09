@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use std::path::PathBuf;
 
-use masthead_core::adapters::{claude, codex};
+use masthead_core::adapters::{antigravity, claude, codex};
 use masthead_core::{Agent, Roots, SessionState, SessionStore, TokenUsage, Turn};
 
 fn fixtures() -> PathBuf {
@@ -150,6 +150,7 @@ fn store_lists_all_agents_newest_first() {
         claude: Some(fixtures().join("claude")),
         codex: Some(fixtures().join("codex").join("sessions")),
         codex_index: Some(fixtures().join("codex").join("session_index.jsonl")),
+        antigravity: None,
     });
     let first = store.refresh();
     assert_eq!(first.len(), 2);
@@ -268,4 +269,115 @@ fn state_is_active_only_while_the_agent_works() {
     );
     done.refresh_state(at(90));
     assert_eq!(done.state, SessionState::Ended);
+}
+
+/// A summaries database shaped like Antigravity's, with the columns Masthead reads.
+fn antigravity_db(name: &str) -> PathBuf {
+    let dir = std::env::temp_dir().join(format!("masthead-test-{name}"));
+    let _ = std::fs::remove_dir_all(&dir);
+    std::fs::create_dir_all(&dir).unwrap();
+    let path = dir.join("conversation_summaries.db");
+    let db = rusqlite::Connection::open(&path).unwrap();
+    db.execute_batch(
+        r#"CREATE TABLE conversation_summaries (
+            conversation_id text, title text NOT NULL DEFAULT "", preview text NOT NULL DEFAULT "",
+            step_count integer, last_modified_time datetime NOT NULL, workspace_uris text NOT NULL,
+            status text NOT NULL DEFAULT "", parent_conversation_id text, nesting_depth integer,
+            not_fully_idle integer, killed integer, raw_summary blob);
+        INSERT INTO conversation_summaries VALUES
+          ('c1', 'Secure deck architecture', '', 2525, '2026-10-23 20:04:49.6307804+00:00',
+           '["file:///d%3A/Workspace/invokemind"]', 'CASCADE_RUN_STATUS_IDLE', '', 0, 0, 0,
+           X'3a06089f8ceac7064a0622046d61696e'),
+          ('c2', '', 'Research the carousel app
+and report back', 198, '2026-10-23 19:00:00+00:00',
+           '["file:///d%3A/Workspace/invokemind"]', 'CASCADE_RUN_STATUS_IDLE', 'c1', 1, 0, 0, NULL),
+          ('c3', 'Fix login', '', 12, '2026-10-23 21:00:00+00:00',
+           '["file:///d%3A/Workspace/web"]', 'CASCADE_RUN_STATUS_RUNNING', '', 0, 1, 0, NULL);"#,
+    )
+    .unwrap();
+
+    // Conversation c1's own database: one model call and two prompts.
+    let conversations = dir.join("conversations");
+    std::fs::create_dir_all(&conversations).unwrap();
+    let c1 = rusqlite::Connection::open(conversations.join("c1.db")).unwrap();
+    c1.execute_batch(
+        "CREATE TABLE gen_metadata (idx integer, data blob, size integer);
+         CREATE TABLE steps (idx integer, step_type integer);
+         INSERT INTO gen_metadata VALUES
+           (0, X'0a232207106418142884074a0952070888272080e2099a010c67656d696e692d332d70726f', 0);
+         INSERT INTO steps VALUES (0, 14), (1, 5), (2, 9), (3, 14);",
+    )
+    .unwrap();
+    path
+}
+
+#[test]
+fn antigravity_conversations_are_read() {
+    let mut list = antigravity::parse_index(&antigravity_db("antigravity")).unwrap();
+    list.sort_by(|a, b| a.id.cmp(&b.id));
+    assert_eq!(list.len(), 3);
+
+    let main = &list[0];
+    assert_eq!(main.agent, Agent::Antigravity);
+    assert_eq!(main.title, "Secure deck architecture");
+    assert_eq!(
+        main.project_path.as_deref(),
+        Some("D:\\Workspace\\invokemind")
+    );
+    assert_eq!(main.project_name.as_deref(), Some("invokemind"));
+    assert_eq!(main.turn, Turn::Done);
+    assert!(!main.is_subagent);
+    assert_eq!(
+        main.last_activity.unwrap().to_rfc3339(),
+        "2026-10-23T20:04:49.630780400+00:00"
+    );
+
+    assert_eq!(
+        main.started_at.unwrap().to_rfc3339(),
+        "2025-10-23T19:46:39+00:00",
+        "start comes from the summary blob, not the last change"
+    );
+    assert_eq!(main.git_branch.as_deref(), Some("main"));
+
+    let sub = &list[1];
+    assert_eq!(
+        sub.title, "Research the carousel app",
+        "falls back to the preview"
+    );
+    assert!(sub.is_subagent);
+
+    assert_eq!(
+        list[2].turn,
+        Turn::Working,
+        "a running conversation is working"
+    );
+}
+
+#[test]
+fn store_includes_antigravity() {
+    let mut store = SessionStore::new(Roots {
+        antigravity: Some(antigravity_db("antigravity-store")),
+        ..Roots::default()
+    });
+    let sessions = store.refresh();
+    assert_eq!(sessions.len(), 3);
+    assert_eq!(sessions[0].id, "c3", "newest first");
+    assert!(store.is_known_project("D:\\Workspace\\web"));
+
+    let c1 = sessions.iter().find(|s| s.id == "c1").unwrap();
+    assert_eq!(c1.model.as_deref(), Some("gemini-3-pro"));
+    assert_eq!(
+        c1.tokens,
+        TokenUsage {
+            input: 100,
+            output: 20,
+            cache_read: 900,
+            cache_write: 0
+        }
+    );
+    assert_eq!(
+        (c1.context_used, c1.context_window),
+        (Some(5000), Some(160_000))
+    );
+    assert_eq!(c1.user_messages, 2, "prompts are the user-input steps");
 }

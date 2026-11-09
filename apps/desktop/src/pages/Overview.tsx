@@ -9,7 +9,7 @@ interface Props {
   onViewAll: () => void;
 }
 
-const AGENTS: Agent[] = ["claudeCode", "codex"];
+const AGENTS: Agent[] = ["claudeCode", "codex", "antigravity"];
 
 export function Overview({ sessions, onOpen, onViewAll }: Props) {
   const main = sessions.filter((s) => !s.isSubagent);
@@ -61,7 +61,8 @@ export function Overview({ sessions, onOpen, onViewAll }: Props) {
               {AGENTS.map((agent) => {
                 const mine = main.filter((s) => s.agent === agent);
                 const live = mine.filter((s) => s.state === "active").length;
-                const tokens = mine.filter((s) => isToday(s.lastActivity)).reduce((n, s) => n + totalTokens(s.tokens), 0);
+                const today = mine.filter((s) => isToday(s.lastActivity));
+                const tokens = today.reduce((n, s) => n + totalTokens(s.tokens), 0);
                 return (
                   <div className="list-item" key={agent}>
                     <AgentBadge agent={agent} />

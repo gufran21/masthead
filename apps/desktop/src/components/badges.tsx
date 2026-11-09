@@ -3,10 +3,12 @@ import { agentName, stateLabel } from "../lib/format";
 // Agent logos from Lobe Icons (MIT); the marks belong to their owners.
 import claudeCodeLogo from "@lobehub/icons-static-svg/icons/claudecode-color.svg";
 import codexLogo from "@lobehub/icons-static-svg/icons/codex-color.svg";
+import antigravityLogo from "@lobehub/icons-static-svg/icons/antigravity-color.svg";
 
 const LOGOS: Record<Agent, string> = {
   claudeCode: claudeCodeLogo,
   codex: codexLogo,
+  antigravity: antigravityLogo,
 };
 
 export function AgentBadge({ agent }: { agent: Agent }) {

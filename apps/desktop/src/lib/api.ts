@@ -1,6 +1,6 @@
 import { invoke } from "@tauri-apps/api/core";
 
-export type Agent = "claudeCode" | "codex";
+export type Agent = "claudeCode" | "codex" | "antigravity";
 export type SessionState = "active" | "idle" | "ended";
 /** Where the agent is in its exchange with the user. */
 export type Turn = "working" | "done" | "interrupted";
@@ -172,6 +172,23 @@ function sampleSessions(): Session[] {
       contextUsed: 24_000,
       turn: "done",
       state: "ended",
+    },
+    {
+      ...base,
+      id: "sample-4",
+      agent: "antigravity",
+      title: "Redesign the onboarding flow",
+      projectPath: "D:\\Code\\web-app",
+      projectName: "web-app",
+      model: "gemini-3.7-flash",
+      startedAt: ago(65),
+      lastActivity: ago(40),
+      userMessages: 4,
+      tokens: { input: 8_000, output: 3_100, cacheRead: 210_000, cacheWrite: 0 },
+      contextUsed: 31_000,
+      contextWindow: 1_000_000,
+      turn: "done",
+      state: "idle",
     },
   ];
 }

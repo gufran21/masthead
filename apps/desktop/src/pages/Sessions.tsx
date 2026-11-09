@@ -113,7 +113,7 @@ export function Sessions({ sessions, query, selectedKey, onSelect }: Props) {
 
       <div className="toolbar" role="group" aria-label="Filter and sort sessions">
         <div className="segmented" role="group" aria-label="Agent">
-          {(["all", "claudeCode", "codex"] as const).map((a) => (
+          {(["all", "claudeCode", "codex", "antigravity"] as const).map((a) => (
             <button key={a} className={agent === a ? "on" : ""} aria-pressed={agent === a} onClick={() => setAgent(a)}>
               {a === "all" ? "All" : agentName[a]}
             </button>

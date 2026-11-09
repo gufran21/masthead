@@ -7,7 +7,7 @@
 <p align="center">Your AI coding agents, at a glance.</p>
 
 Masthead is a fast, local desktop app for Windows that watches your AI coding agent
-sessions (Claude Code, Codex and more), so you always know which agent is working,
+sessions (Claude Code, Codex, Antigravity and more), so you always know which agent is working,
 what it costs and where it's running. It has a liquid-glass interface and a small
 notch that stays at the top of your screen.
 
@@ -18,7 +18,7 @@ notch that stays at the top of your screen.
 
 | | Status |
 |---|---|
-| Unified list of Claude Code and Codex sessions: title, project, model, state, tokens, context use | Available |
+| Unified list of Claude Code, Codex and Antigravity sessions: title, project, model, state, tokens, context use | Available |
 | Live updates while agents work; close-to-tray | Available |
 | Liquid-glass UI rendered with WebGL, in one flat theme colour (orange by default) | Available |
 | Notch at the top of the screen: push the cursor to the top edge for a status pill, hover for a peek card of live sessions | Available |
@@ -31,8 +31,8 @@ notch that stays at the top of your screen.
 ## Privacy
 
 Masthead only **reads** the log files agents already keep on your machine
-(`~/.claude/projects`, `~/.codex/sessions`, or under `CLAUDE_CONFIG_DIR` and
-`CODEX_HOME` when those are set). It never writes to them, never uploads
+(`~/.claude/projects`, `~/.codex/sessions`, `~/.gemini/antigravity`, or under
+`CLAUDE_CONFIG_DIR` and `CODEX_HOME` when those are set). It never writes to them, never uploads
 anything and has no telemetry or account.
 
 ## Supported agents
@@ -41,6 +41,7 @@ anything and has no telemetry or account.
 |---|---|---|
 | Claude Code | `~/.claude/projects/<project>/<session>.jsonl` | CLI and IDE extensions |
 | Codex | `~/.codex/sessions/**/rollout-*.jsonl[.zst]` | Titles from `~/.codex/session_index.jsonl` |
+| Antigravity | `~/.gemini/antigravity/` (`conversation_summaries.db`, `conversations/*.db`) | Read-only SQLite |
 
 ## Build from source
 

@@ -9,6 +9,7 @@ use serde::Serialize;
 pub enum Agent {
     ClaudeCode,
     Codex,
+    Antigravity,
 }
 
 /// Activity state derived from the turn and how recently the log changed.
