@@ -1,6 +1,7 @@
 //! One module per agent. Each exposes `discover` (find session files under a root)
 //! and `parse_file` (summarise one file into a [`crate::Session`]).
 
+pub mod antigravity;
 pub mod claude;
 pub mod codex;
 

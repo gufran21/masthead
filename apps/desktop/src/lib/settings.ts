@@ -197,6 +197,7 @@ export async function setAutostart(enabled: boolean): Promise<boolean> {
 export interface AgentFolders {
   claude: string | null;
   codex: string | null;
+  antigravity: string | null;
 }
 
 export async function agentFolders(): Promise<AgentFolders | null> {

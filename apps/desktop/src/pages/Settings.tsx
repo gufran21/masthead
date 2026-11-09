@@ -246,6 +246,11 @@ export function Settings({ settings, onChange }: Props) {
             {folders?.codex ?? "—"}
           </span>
         </Row>
+        <Row label="Antigravity conversations">
+          <span className="settings-path" title={folders?.antigravity ?? undefined}>
+            {folders?.antigravity ?? "—"}
+          </span>
+        </Row>
         <Row label="Reset settings" hint="Back to the defaults. Start with Windows is left as it is.">
           <button className="glass-control settings-button" onClick={() => onChange(DEFAULT_SETTINGS)}>
             Reset

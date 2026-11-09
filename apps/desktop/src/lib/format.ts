@@ -3,6 +3,7 @@ import type { Agent, Session, SessionState, TokenUsage } from "./api";
 export const agentName: Record<Agent, string> = {
   claudeCode: "Claude Code",
   codex: "Codex",
+  antigravity: "Antigravity",
 };
 
 export const stateLabel: Record<SessionState, string> = {

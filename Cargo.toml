@@ -16,6 +16,8 @@ serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 walkdir = "2"
 zstd = "0.13"
+# Bundled so Windows builds need no system SQLite.
+rusqlite = { version = "0.37", features = ["bundled"] }
 
 [profile.release]
 codegen-units = 1

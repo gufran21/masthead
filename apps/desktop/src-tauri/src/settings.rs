@@ -169,6 +169,7 @@ pub fn set_autostart(app: AppHandle, enabled: bool) -> Result<bool, String> {
 pub struct AgentFolders {
     claude: Option<String>,
     codex: Option<String>,
+    antigravity: Option<String>,
 }
 
 /// The folders Masthead reads session logs from, for the About section.
@@ -179,6 +180,11 @@ pub fn agent_folders() -> AgentFolders {
     AgentFolders {
         claude: show(roots.claude),
         codex: show(roots.codex),
+        antigravity: show(
+            roots
+                .antigravity
+                .and_then(|db| db.parent().map(PathBuf::from)),
+        ),
     }
 }
 

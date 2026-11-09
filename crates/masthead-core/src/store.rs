@@ -4,7 +4,7 @@ use std::time::SystemTime;
 
 use chrono::Utc;
 
-use crate::adapters::{claude, codex};
+use crate::adapters::{antigravity, claude, codex};
 use crate::model::Session;
 
 /// Where each agent keeps its logs. `None` disables that agent.
@@ -13,6 +13,8 @@ pub struct Roots {
     pub claude: Option<PathBuf>,
     pub codex: Option<PathBuf>,
     pub codex_index: Option<PathBuf>,
+    /// Antigravity's `conversation_summaries.db`.
+    pub antigravity: Option<PathBuf>,
 }
 
 impl Roots {
@@ -22,6 +24,7 @@ impl Roots {
             claude: claude::default_root(),
             codex: codex::default_root(),
             codex_index: codex::default_index(),
+            antigravity: antigravity::default_index(),
         }
     }
 }
@@ -42,6 +45,15 @@ impl Stamp {
     }
 }
 
+/// A SQLite database and its write-ahead log.
+type DbStamp = (Stamp, Option<Stamp>);
+
+fn db_stamp(db: &Path) -> Option<DbStamp> {
+    let mut wal = db.as_os_str().to_owned();
+    wal.push("-wal");
+    Some((Stamp::of(db)?, Stamp::of(Path::new(&wal))))
+}
+
 /// Keeps parsed sessions and re-parses only files whose size or modification
 /// time changed since the last [`SessionStore::refresh`].
 pub struct SessionStore {
@@ -49,6 +61,12 @@ pub struct SessionStore {
     cache: HashMap<PathBuf, (Stamp, Session)>,
     codex_titles: HashMap<String, String>,
     codex_index_stamp: Option<Stamp>,
+    /// One database holds every Antigravity conversation, so it is cached whole,
+    /// keyed by the database and its write-ahead log (where new writes land first).
+    antigravity: Option<(DbStamp, Vec<Session>)>,
+    /// Model, tokens and prompts per Antigravity conversation database, re-read
+    /// only when that database changes.
+    antigravity_details: HashMap<PathBuf, (DbStamp, antigravity::Details)>,
 }
 
 impl SessionStore {
@@ -58,6 +76,8 @@ impl SessionStore {
             cache: HashMap::new(),
             codex_titles: HashMap::new(),
             codex_index_stamp: None,
+            antigravity: None,
+            antigravity_details: HashMap::new(),
         }
     }
 
@@ -80,12 +100,23 @@ impl SessionStore {
             }
         }
 
+        match self.roots.antigravity.clone() {
+            Some(db) => self.update_antigravity(&db),
+            None => self.antigravity = None,
+        }
+
         self.cache.retain(|path, _| seen.contains(path));
         let now = Utc::now();
         let mut sessions: Vec<Session> = self
             .cache
             .values_mut()
-            .map(|(_, s)| {
+            .map(|(_, s)| s)
+            .chain(
+                self.antigravity
+                    .iter_mut()
+                    .flat_map(|(_, list)| list.iter_mut()),
+            )
+            .map(|s| {
                 s.refresh_state(now);
                 s.clone()
             })
@@ -116,7 +147,48 @@ impl SessionStore {
     pub fn is_known_project(&self, path: &str) -> bool {
         self.cache
             .values()
-            .any(|(_, s)| s.project_path.as_deref() == Some(path))
+            .map(|(_, s)| s)
+            .chain(self.antigravity.iter().flat_map(|(_, list)| list.iter()))
+            .any(|s| s.project_path.as_deref() == Some(path))
+    }
+
+    fn update_antigravity(&mut self, db: &Path) {
+        let Some(stamp) = db_stamp(db) else {
+            self.antigravity = None;
+            self.antigravity_details.clear();
+            return;
+        };
+        let stale = !matches!(&self.antigravity, Some((s, _)) if *s == stamp);
+        // A database that can't be read keeps its previous sessions, if any.
+        if stale {
+            if let Ok(list) = antigravity::parse_index(db) {
+                self.antigravity = Some((stamp, list));
+            }
+        }
+        let Some((_, list)) = self.antigravity.as_mut() else {
+            return;
+        };
+
+        let details = &mut self.antigravity_details;
+        details.retain(|path, _| list.iter().any(|s| &s.source_file == path));
+        for session in list.iter_mut() {
+            let file = &session.source_file;
+            if file.as_path() == db {
+                continue; // no conversation database of its own
+            }
+            let Some(stamp) = db_stamp(file) else {
+                continue;
+            };
+            let fresh = matches!(details.get(file), Some((s, _)) if *s == stamp);
+            if !fresh {
+                if let Ok(d) = antigravity::details(file) {
+                    details.insert(file.clone(), (stamp, d));
+                }
+            }
+            if let Some((_, d)) = details.get(file) {
+                d.apply(session);
+            }
+        }
     }
 
     fn reload_codex_index(&mut self) -> bool {

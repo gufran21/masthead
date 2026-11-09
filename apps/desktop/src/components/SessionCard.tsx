@@ -32,10 +32,12 @@ export function SessionCard({ session: s, selected, onSelect }: Props) {
       <span className="card-meta">{meta}</span>
       <span className="card-foot">
         <span className="when">{relativeTime(s.lastActivity)}</span>
-        <span className="fig" title="Duration">
-          <ClockIcon />
-          {duration(s)}
-        </span>
+        {s.startedAt && (
+          <span className="fig" title="Duration">
+            <ClockIcon />
+            {duration(s)}
+          </span>
+        )}
         <span className="fig" title="Tokens">
           <TokensIcon />
           {compact(totalTokens(s.tokens))}

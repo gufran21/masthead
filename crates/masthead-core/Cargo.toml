@@ -1,6 +1,6 @@
 [package]
 name = "masthead-core"
-description = "Discovers and summarises AI coding agent sessions (Claude Code, Codex) from their local logs."
+description = "Discovers and summarises AI coding agent sessions (Claude Code, Codex, Antigravity) from their local logs."
 version.workspace = true
 edition.workspace = true
 license.workspace = true
@@ -14,3 +14,4 @@ serde.workspace = true
 serde_json.workspace = true
 walkdir.workspace = true
 zstd.workspace = true
+rusqlite.workspace = true
