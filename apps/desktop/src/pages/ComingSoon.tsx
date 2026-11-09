@@ -1,6 +1,5 @@
 const COPY: Record<string, { title: string; text: string }> = {
   system: { title: "System", text: "Live CPU, memory, disk and network, and the processes your agents start." },
-  ports: { title: "Ports", text: "See which process listens on which port, and stop it." },
   cleanup: { title: "Cleanup", text: "Find caches and stale node_modules, preview them, and move them to the Recycle Bin." },
   doctor: { title: "Doctor", text: "Read-only health checks for your dev setup, each with an explicit fix." },
   notch: { title: "Notch", text: "Design the pill and peek card that sit at the top of your screen." },

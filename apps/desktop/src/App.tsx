@@ -7,6 +7,7 @@ import { Overview } from "./pages/Overview";
 import { Sessions } from "./pages/Sessions";
 import { ComingSoon } from "./pages/ComingSoon";
 import { Settings } from "./pages/Settings";
+import { Ports } from "./pages/Ports";
 import { useSessions } from "./lib/useSessions";
 import { themeFor, useSettings } from "./lib/settings";
 import { inTauri, type Session } from "./lib/api";
@@ -76,6 +77,8 @@ export function App() {
               <div className="empty">Looking for agent sessions…</div>
             ) : page === "overview" ? (
               <Overview sessions={list} onOpen={open} onViewAll={() => setPage("sessions")} />
+            ) : page === "ports" ? (
+              <Ports sessions={list} onOpenSession={open} />
             ) : page === "sessions" ? (
               <Sessions sessions={list} query={query} selectedKey={selected} onSelect={(s) => setSelected(`${s.agent}:${s.id}`)} />
             ) : (

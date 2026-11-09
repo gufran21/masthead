@@ -9,7 +9,16 @@ export function pathSegments(path: string): string[] {
   return parts;
 }
 
-export function ProjectBox({ name, path }: { name: string | null; path: string }) {
+export function ProjectBox({
+  name,
+  path,
+  onOpen = openFolder,
+}: {
+  name: string | null;
+  path: string;
+  /** Opens the folder; defaults to the session-project check in Rust. */
+  onOpen?: (path: string) => Promise<void>;
+}) {
   const [copied, setCopied] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const segments = pathSegments(path);
@@ -45,8 +54,8 @@ export function ProjectBox({ name, path }: { name: string | null; path: string }
   const open = async () => {
     setError(null);
     try {
-      // The backend checks the original path against known sessions.
-      await openFolder(path);
+      // The backend checks the path before opening it.
+      await onOpen(path);
     } catch (e) {
       setError(String(e));
     }
@@ -62,7 +71,12 @@ export function ProjectBox({ name, path }: { name: string | null; path: string }
           {name ?? segments.at(-1) ?? fullPath}
         </span>
         {inTauri && (
-          <button className="glass-control icon-button small" onClick={open} aria-label="Open folder" title="Open in File Explorer">
+          <button
+            className="glass-control icon-button small"
+            onClick={open}
+            aria-label="Open folder"
+            title="Open in File Explorer"
+          >
             <OpenFolderIcon />
           </button>
         )}
