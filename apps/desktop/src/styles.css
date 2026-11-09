@@ -1673,3 +1673,209 @@ main > * {
   white-space: normal;
   overflow-wrap: anywhere;
 }
+
+/* System */
+.sys-tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 12px;
+  margin-bottom: 22px;
+}
+.sys-tile {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-height: 150px;
+  padding: 14px 16px 10px;
+}
+.sys-label {
+  font-size: 12.5px;
+  color: var(--text-2);
+}
+.sys-value {
+  font-size: 28px;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+  font-variant-numeric: tabular-nums;
+}
+.sys-net {
+  display: flex;
+  flex-direction: column;
+  font-size: 17px;
+  line-height: 1.35;
+}
+.sys-sub {
+  font-size: 12px;
+  color: var(--text-3);
+}
+.spark {
+  width: 100%;
+  height: 40px;
+  margin-top: auto;
+}
+.spark-line {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 1.6;
+  vector-effect: non-scaling-stroke;
+  stroke-linejoin: round;
+}
+.spark-line.second {
+  stroke: var(--text-3);
+}
+.sys-disks {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 8px;
+}
+.sys-disk-row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 5px;
+  font-size: 12.5px;
+  color: var(--text-2);
+  font-variant-numeric: tabular-nums;
+}
+.sys-disk-name {
+  font-weight: 650;
+  color: var(--text);
+}
+.sys-tile .meter,
+.sys-row .meter {
+  display: block;
+  height: 6px;
+  border-radius: 3px;
+  background: rgba(var(--ink), 0.12);
+  overflow: hidden;
+}
+.sys-tile .meter span,
+.sys-row .meter span {
+  display: block;
+  height: 100%;
+  border-radius: 3px;
+  background: var(--accent);
+}
+.sys-section + .sys-section {
+  margin-top: 22px;
+}
+.sys-agents {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(420px, 1fr));
+  gap: 12px;
+}
+.sys-agent {
+  padding: 14px 16px 12px;
+}
+.sys-agent-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.sys-agent-title {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+.sys-agent-title span {
+  font-size: 12.5px;
+  color: var(--text-2);
+}
+.sys-agent-use {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  font-size: 12.5px;
+  color: var(--text-2);
+  font-variant-numeric: tabular-nums;
+}
+.sys-children {
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid var(--line);
+}
+.sys-children-label {
+  margin-bottom: 4px;
+  font-size: 12px;
+  color: var(--text-3);
+}
+.sys-quiet {
+  margin: 10px 0 0;
+  font-size: 12.5px;
+  color: var(--text-3);
+}
+.sys-row-action .sys-quiet {
+  margin: 0;
+}
+.sys-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 56px 70px auto;
+  align-items: center;
+  gap: 10px;
+  min-height: 36px;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+.sys-list .sys-row {
+  grid-template-columns: minmax(0, 1fr) 150px 80px;
+  padding: 0 4px;
+}
+.sys-list .sys-row + .sys-row {
+  border-top: 1px solid var(--line);
+}
+.sys-list {
+  padding: 6px 12px;
+}
+.sys-row-name {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  font-weight: 600;
+}
+.sys-cmd {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font: 11.5px var(--mono);
+  font-weight: 400;
+  color: var(--text-3);
+}
+.sys-tag {
+  padding: 1px 7px;
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--accent) 16%, transparent);
+  color: var(--accent-text);
+  font-size: 11px;
+  font-weight: 600;
+}
+.sys-row-cpu {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  text-align: right;
+}
+.sys-row-mem {
+  text-align: right;
+  color: var(--text-2);
+}
+.sys-row-action {
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+  min-width: 56px;
+}
+.sys-more {
+  margin-top: 4px;
+  padding: 4px 0;
+  border: none;
+  background: none;
+  color: var(--accent-text);
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+}

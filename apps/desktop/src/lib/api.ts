@@ -158,6 +158,129 @@ function samplePorts(): Listener[] {
   ];
 }
 
+/** Live system activity. Mirrors `system::Snapshot`. */
+export interface SystemSnapshot {
+  cpu: number;
+  cores: number[];
+  memoryUsed: number;
+  memoryTotal: number;
+  disks: { mount: string; name: string; total: number; available: number }[];
+  downloadRate: number;
+  uploadRate: number;
+  uptimeSecs: number;
+  top: SystemProc[];
+  agents: AgentGroup[];
+}
+
+export interface SystemProc {
+  pid: number;
+  name: string;
+  command: string | null;
+  cpu: number;
+  memory: number;
+  agent: Agent | null;
+}
+
+/** A running agent and what it started. */
+export interface AgentGroup {
+  pid: number;
+  agent: Agent;
+  host: string | null;
+  cpu: number;
+  memory: number;
+  startedAt: number;
+  children: SystemProc[];
+}
+
+export async function systemSnapshot(): Promise<SystemSnapshot> {
+  if (!inTauri) return sampleSnapshot();
+  return invoke<SystemSnapshot>("system_snapshot");
+}
+
+/** Stops a process an agent started; Rust re-checks that it is one. */
+export async function stopAgentProcess(pid: number): Promise<void> {
+  if (!inTauri) throw new Error("Stopping processes works in the desktop app");
+  await invoke("stop_agent_process", { pid });
+}
+
+function sampleSnapshot(): SystemSnapshot {
+  const now = Math.floor(Date.now() / 1000);
+  const wobble = (base: number, spread: number) => Math.max(0, base + (Math.random() - 0.5) * spread);
+  const MB = 1024 * 1024;
+  return {
+    cpu: wobble(22, 14),
+    cores: Array.from({ length: 12 }, () => wobble(20, 30)),
+    memoryUsed: 11.4 * 1024 * MB,
+    memoryTotal: 16 * 1024 * MB,
+    disks: [
+      { mount: "C:\\", name: "Windows", total: 476 * 1024 * MB, available: 132 * 1024 * MB },
+      { mount: "D:\\", name: "Data", total: 931 * 1024 * MB, available: 512 * 1024 * MB },
+    ],
+    downloadRate: Math.round(wobble(180_000, 200_000)),
+    uploadRate: Math.round(wobble(40_000, 50_000)),
+    uptimeSecs: 3 * 86400 + 5 * 3600,
+    top: [
+      {
+        pid: 18432,
+        name: "node.exe",
+        command: "node next dev",
+        cpu: wobble(9, 6),
+        memory: 412 * MB,
+        agent: "claudeCode",
+      },
+      { pid: 7712, name: "chrome.exe", command: null, cpu: wobble(5, 4), memory: 820 * MB, agent: null },
+      { pid: 20116, name: "cargo.exe", command: "cargo test", cpu: wobble(4, 4), memory: 96 * MB, agent: "codex" },
+      { pid: 5520, name: "Code.exe", command: null, cpu: wobble(2, 2), memory: 640 * MB, agent: null },
+    ],
+    agents: [
+      {
+        pid: 38404,
+        agent: "claudeCode",
+        host: "VS Code",
+        cpu: wobble(11, 6),
+        memory: 690 * MB,
+        startedAt: now - 47 * 60,
+        children: [
+          {
+            pid: 18432,
+            name: "node.exe",
+            command: "node node_modules/next/dist/bin/next dev",
+            cpu: wobble(9, 6),
+            memory: 412 * MB,
+            agent: "claudeCode",
+          },
+          {
+            pid: 18990,
+            name: "pwsh.exe",
+            command: "pwsh -NoProfile -Command npm test",
+            cpu: wobble(1, 1),
+            memory: 88 * MB,
+            agent: "claudeCode",
+          },
+        ],
+      },
+      {
+        pid: 30812,
+        agent: "codex",
+        host: "Terminal",
+        cpu: wobble(4, 4),
+        memory: 150 * MB,
+        startedAt: now - 12 * 60,
+        children: [
+          {
+            pid: 20116,
+            name: "cargo.exe",
+            command: "cargo test --workspace",
+            cpu: wobble(4, 4),
+            memory: 96 * MB,
+            agent: "codex",
+          },
+        ],
+      },
+    ],
+  };
+}
+
 /** The notch page is listening for events; Rust may show its window. */
 export async function notchReady(): Promise<void> {
   if (inTauri) await invoke("notch_ready");

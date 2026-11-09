@@ -27,7 +27,8 @@ notch that stays at the top of your screen.
 | Approve or deny Claude Code permission requests from the notch (opt-in; Codex later) | Available |
 | Cursor, Gemini CLI and other agents | Planned |
 | Ports: listening servers with their process, project and agent; open or stop them | Available |
-| System tools: processes, cleanup, health checks | Planned |
+| System: live CPU, memory, disks and network, and the processes each agent started | Available |
+| Cleanup and health checks | Planned |
 
 ## Privacy
 
